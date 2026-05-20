@@ -8,3 +8,4 @@ dist
 *.log
 uploads/*
 !uploads/.gitkeep
+tsconfig.tsbuildinfo
