@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { requirePermission } from "@/lib/auth";
 import { recordAudit } from "@/lib/audit";
 import { handleRouteError, ok } from "@/lib/http";
@@ -44,7 +45,7 @@ export async function POST(request: Request) {
         departmentId: body.departmentId,
         dateRangeStart: body.dateRangeStart ? new Date(body.dateRangeStart) : undefined,
         dateRangeEnd: body.dateRangeEnd ? new Date(body.dateRangeEnd) : undefined,
-        filtersUsed: body.filtersUsed,
+        filtersUsed: body.filtersUsed as Prisma.InputJsonValue | undefined,
         summaryMetrics: {
           generatedAt: new Date().toISOString(),
           internalUseOnly: true

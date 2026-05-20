@@ -11,6 +11,8 @@ export function AppShell({ user, children }: { user: AuthenticatedUser; children
     "onboarding-case-management": "/onboarding",
     "payroll-coordination-center": "/payroll",
     "reports-exports": "/reports"
+    // Module routes (capacity-mps, first-piece-runs, scheduling, npi-projects, sales)
+    // resolve through the /workflows/[slug] catch-all until their dedicated routes land in Phase 3.
   };
 
   return (
