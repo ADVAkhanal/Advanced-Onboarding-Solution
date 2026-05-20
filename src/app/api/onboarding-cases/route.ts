@@ -1,4 +1,4 @@
-import { canAccessDepartment, requirePermission } from "@/lib/auth";
+import { canAccessDepartment, departmentScopeForUser, requirePermission } from "@/lib/auth";
 import { recordAudit } from "@/lib/audit";
 import { handleRouteError, HttpError, ok } from "@/lib/http";
 import { recordNumber } from "@/lib/numbering";
@@ -24,7 +24,7 @@ export async function GET(request: Request) {
         archivedAt: null,
         ...(departmentId ? { departmentId } : {}),
         ...(status ? { status } : {}),
-        ...(user.userLevel === "MANAGER" ? { departmentId: user.departmentId ?? "__none__" } : {})
+        ...departmentScopeForUser(user)
       },
       orderBy: [{ startDate: "asc" }, { updatedAt: "desc" }],
       take: 100

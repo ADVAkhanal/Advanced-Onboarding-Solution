@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   --ink: #071426;
   --ink-2: #0b1c32;
@@ -350,6 +354,10 @@ h3 {
 
 .three-col {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.four-col {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .card {
@@ -1073,6 +1081,7 @@ h3 {
   .kpi-grid,
   .two-col,
   .three-col,
+  .four-col,
   .status-lanes {
     grid-template-columns: 1fr;
   }

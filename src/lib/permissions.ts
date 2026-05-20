@@ -41,7 +41,7 @@ export const PERMISSIONS = [
 export type PermissionKey = (typeof PERMISSIONS)[number][0];
 
 const levelPermissions: Record<UserLevel, PermissionKey[]> = {
-  LEVEL_1: [
+  USER: [
     "dashboard:view",
     "ticket:view",
     "ticket:create",
@@ -49,6 +49,7 @@ const levelPermissions: Record<UserLevel, PermissionKey[]> = {
     "payroll:create",
     "timeoff:view",
     "timeoff:create",
+    "attendance:view",
     "attendance:create",
     "task:view",
     "file:upload"
@@ -113,7 +114,7 @@ const levelPermissions: Record<UserLevel, PermissionKey[]> = {
     "note:manage",
     "announcement:manage"
   ],
-  GLOBAL_ADMIN: PERMISSIONS.map(([key]) => key)
+  ADMIN: PERMISSIONS.map(([key]) => key)
 };
 
 export function permissionsForLevel(level: UserLevel) {

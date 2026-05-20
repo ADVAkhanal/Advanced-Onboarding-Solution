@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requirePermission } from "@/lib/auth";
+import { departmentScopeForUser, requirePermission } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -8,7 +8,7 @@ export default async function PayrollCoordinationPage() {
   const user = await requirePermission("payroll:view");
   const [requests, periods] = await Promise.all([
     prisma.payrollChangeRequest.findMany({
-      where: { organizationId: user.organizationId, archivedAt: null, ...(user.userLevel === "MANAGER" ? { departmentId: user.departmentId ?? "__none__" } : {}) },
+      where: { organizationId: user.organizationId, archivedAt: null, ...departmentScopeForUser(user) },
       orderBy: [{ updatedAt: "desc" }],
       take: 100
     }),

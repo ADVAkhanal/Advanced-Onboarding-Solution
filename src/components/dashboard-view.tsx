@@ -34,7 +34,7 @@ export function DashboardView({ data, user, variant = "executive" }: { data: Com
       : variant === "manager"
         ? "Manager Dashboard"
         : variant === "employee"
-          ? "Level 1 User Portal"
+          ? "User Portal"
           : "Executive Command Dashboard";
 
   const subhead =
@@ -70,15 +70,15 @@ export function DashboardView({ data, user, variant = "executive" }: { data: Com
           <p className="subhead">{subhead}</p>
         </div>
         <div className="actions">
-          <Link className="button primary" href="/workflows/department-ticket-centers">
+          <Link className="button primary" href="/tickets">
             <Inbox size={18} />
             Create Ticket
           </Link>
-          <Link className="button dark" href="/workflows/onboarding-request-center">
+          <Link className="button dark" href="/onboarding">
             <UserPlus size={18} />
             Create Onboarding Request
           </Link>
-          <Link className="button" href="/workflows/reports-exports">
+          <Link className="button" href="/reports">
             <ClipboardCheck size={18} />
             Generate Report
           </Link>
@@ -96,7 +96,7 @@ export function DashboardView({ data, user, variant = "executive" }: { data: Com
           <section className="card">
             <div className="section-title">
               <h2>Department Health Overview</h2>
-              <Link className="link" href="/workflows/reports-exports">View Full Report</Link>
+              <Link className="link" href="/reports">View Full Report</Link>
             </div>
             <div className="card-pad bar-list">
               {data.departmentHealth.length ? (
@@ -119,7 +119,7 @@ export function DashboardView({ data, user, variant = "executive" }: { data: Com
             <section className="card">
               <div className="section-title">
                 <h2>Ticket Aging Trend</h2>
-                <Link className="link" href="/workflows/department-ticket-centers">View All Tickets</Link>
+                <Link className="link" href="/tickets">View All Tickets</Link>
               </div>
               <div className="chart" aria-label="Ticket aging chart">
                 {Array.from({ length: 10 }).map((_, index) => (
@@ -135,7 +135,7 @@ export function DashboardView({ data, user, variant = "executive" }: { data: Com
             <section className="card">
               <div className="section-title">
                 <h2>Onboarding Completion</h2>
-                <Link className="link" href="/workflows/onboarding-case-management">View Onboarding</Link>
+                <Link className="link" href="/onboarding">View Onboarding</Link>
               </div>
               <div className="card-pad">
                 <div className="donut">
@@ -159,7 +159,7 @@ export function DashboardView({ data, user, variant = "executive" }: { data: Com
             <section className="card">
               <div className="section-title">
                 <h2>Recent Department Tickets</h2>
-                <Link className="link" href="/workflows/department-ticket-centers">View All Tickets</Link>
+                <Link className="link" href="/tickets">View All Tickets</Link>
               </div>
               {data.recentTickets.length ? (
                 <table className="table">
@@ -175,7 +175,7 @@ export function DashboardView({ data, user, variant = "executive" }: { data: Com
                   <tbody>
                     {data.recentTickets.map((ticket) => (
                       <tr key={ticket.id}>
-                        <td><Link className="link" href={`/workflows/department-ticket-centers`}>{ticket.ticketNumber}</Link></td>
+                        <td><Link className="link" href={`/tickets/${ticket.id}`}>{ticket.ticketNumber}</Link></td>
                         <td>{ticket.title}</td>
                         <td><span className={`pill ${priorityTone(ticket.priority)}`}>{ticket.priority.replaceAll("_", " ")}</span></td>
                         <td>{ticket.status}</td>
@@ -192,7 +192,7 @@ export function DashboardView({ data, user, variant = "executive" }: { data: Com
             <section className="card">
               <div className="section-title">
                 <h2>New Hires Starting Soon</h2>
-                <Link className="link" href="/workflows/onboarding-case-management">View All New Hires</Link>
+                <Link className="link" href="/onboarding">View All New Hires</Link>
               </div>
               <div className="queue">
                 {data.upcomingOnboarding.length ? (
@@ -253,7 +253,7 @@ export function DashboardView({ data, user, variant = "executive" }: { data: Com
           <section className="card">
             <div className="section-title">
               <h2>Payroll Period Readiness</h2>
-              <Link className="link" href="/workflows/payroll-coordination-center">Payroll Center</Link>
+              <Link className="link" href="/payroll-coordination">Payroll Center</Link>
             </div>
             <div className="card-pad">
               <div className="donut">

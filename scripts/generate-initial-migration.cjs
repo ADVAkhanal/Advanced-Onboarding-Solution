@@ -38,7 +38,7 @@ function sqlType(name, type) {
 
 const columns = [...fieldTypes.entries()].map(([name, type]) => `  "${name}" ${sqlType(name, type)}`).join(",\n");
 let sql = `-- Initial migration generated from prisma/schema.prisma for Railway deploy.
-DO $$ BEGIN CREATE TYPE "UserLevel" AS ENUM ('LEVEL_1','MANAGER','DIRECTOR','GLOBAL_ADMIN'); EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN CREATE TYPE "UserLevel" AS ENUM ('USER','MANAGER','DIRECTOR','ADMIN'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN CREATE TYPE "EmploymentType" AS ENUM ('EMPLOYEE','CONTRACTOR','TEMP','INTERN','SEASONAL'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN CREATE TYPE "VisibilityLevel" AS ENUM ('PRIVATE_TO_MANAGER','VISIBLE_TO_DIRECTOR','VISIBLE_TO_HR_ADMIN','VISIBLE_TO_EMPLOYEE','EXECUTIVE_RESTRICTED'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN CREATE TYPE "RequestPriority" AS ENUM ('LOW','NORMAL','HIGH','URGENT','WORK_STOPPAGE'); EXCEPTION WHEN duplicate_object THEN null; END $$;
@@ -53,6 +53,8 @@ for (const table of tables) {
 const uniqueIndexes = [
   ["organizations", ["slug"]],
   ["users", ["organizationId", "email"]],
+  ["user_department_access", ["organizationId", "userId", "departmentId"]],
+  ["sessions", ["organizationId", "tokenHash"]],
   ["roles", ["organizationId", "systemKey"]],
   ["permissions", ["organizationId", "key"]],
   ["user_roles", ["organizationId", "userId", "roleId"]],
@@ -64,10 +66,12 @@ const uniqueIndexes = [
   ["ticket_categories", ["organizationId", "ticketCenterId", "slug"]],
   ["tickets", ["organizationId", "ticketNumber"]],
   ["onboarding_cases", ["organizationId", "caseNumber"]],
+  ["payroll_coordination_requests", ["organizationId", "requestNumber"]],
   ["payroll_change_requests", ["organizationId", "requestNumber"]],
   ["payroll_exports", ["organizationId", "exportNumber"]],
   ["time_off_requests", ["organizationId", "requestNumber"]],
   ["attendance_issue_records", ["organizationId", "recordNumber"]],
+  ["attendance_issues", ["organizationId", "recordNumber"]],
   ["schedule_issue_records", ["organizationId", "recordNumber"]],
   ["time_correction_requests", ["organizationId", "requestNumber"]],
   ["employee_profiles", ["organizationId", "employeeNumber"]],
@@ -83,7 +87,8 @@ const uniqueIndexes = [
   ["approval_requests", ["organizationId", "requestNumber"]],
   ["reports", ["organizationId", "reportNumber"]],
   ["report_templates", ["organizationId", "reportType"]],
-  ["settings", ["organizationId", "key"]]
+  ["settings", ["organizationId", "key"]],
+  ["app_settings", ["organizationId", "key"]]
 ];
 
 for (const [table, cols] of uniqueIndexes) {

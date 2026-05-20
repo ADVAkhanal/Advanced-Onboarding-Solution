@@ -1,29 +1,45 @@
 import Link from "next/link";
-import { Bell, CalendarDays, Inbox, Search } from "lucide-react";
+import { Bell, CalendarDays, Inbox, Search, ShieldAlert } from "lucide-react";
 import type { AuthenticatedUser } from "@/lib/auth";
 import { BRAND_FOOTER, DISCLAIMER, NAVIGATION, PRODUCT_NAME, WORKFLOW_MODULES } from "@/lib/reference-data";
 
 export function AppShell({ user, children }: { user: AuthenticatedUser; children: React.ReactNode }) {
   const modulesBySlug = new Map(WORKFLOW_MODULES.map((module) => [module.slug, module]));
   const routeOverrides: Record<string, string> = {
-    "executive-command-dashboard": "/",
+    "executive-command-dashboard": "/dashboard",
     "department-ticket-centers": "/tickets",
     "onboarding-case-management": "/onboarding",
-    "payroll-coordination-center": "/payroll",
-    "reports-exports": "/reports"
-    // Module routes (capacity-mps, first-piece-runs, scheduling, npi-projects, sales)
-    // resolve through the /workflows/[slug] catch-all until their dedicated routes land in Phase 3.
+    "payroll-coordination-center": "/payroll-coordination",
+    "time-off-request-center": "/time-off",
+    "attendance-schedule-issue-center": "/attendance",
+    "manager-task-board": "/tasks",
+    "recurring-checklist-center": "/tasks",
+    "department-productivity-board": "/tasks",
+    "approval-queue": "/approvals",
+    "reports-exports": "/reports",
+    "admin-settings": "/admin/settings",
+    "employee-directory": "/admin/users",
+    "audit-log": "/admin/audit-log"
   };
+  const visibleNavigation = NAVIGATION.filter((slug) => {
+    if (["admin-settings", "audit-log", "employee-directory"].includes(slug)) {
+      return user.userLevel === "ADMIN";
+    }
+    if (["approval-queue", "reports-exports"].includes(slug)) {
+      return user.userLevel !== "USER";
+    }
+    return true;
+  });
 
   return (
     <div className="app-shell">
       <aside className="sidebar">
         <div className="brand">
-          <div className="brand-mark">ADVANCED</div>
-          <div className="brand-sub">Shop Management & Onboarding Command Center</div>
+          <div className="brand-mark">CleanOps</div>
+          <div className="brand-sub">Command Center</div>
         </div>
         <nav className="side-nav" aria-label="Main navigation">
-          {NAVIGATION.map((slug, index) => {
+          {visibleNavigation.map((slug, index) => {
             const item = modulesBySlug.get(slug);
             if (!item) return null;
             const Icon = item.icon;
@@ -39,10 +55,16 @@ export function AppShell({ user, children }: { user: AuthenticatedUser; children
               </Link>
             );
           })}
+          <Link className="nav-item" href="/data-boundaries">
+            <span className="nav-left">
+              <ShieldAlert size={18} />
+              <span>Data Boundaries</span>
+            </span>
+          </Link>
         </nav>
         <div className="sidebar-card">
-          <strong>ADVANCED</strong>
-          <span>Consulting Inc.</span>
+          <strong>{process.env.COMPANY_NAME || "CleanOps"}</strong>
+          <span>Operations Command</span>
           <p>{BRAND_FOOTER}</p>
         </div>
         <div className="version">v1.0.0</div>

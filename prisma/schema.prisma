@@ -8,10 +8,10 @@ datasource db {
 }
 
 enum UserLevel {
-  LEVEL_1
+  USER
   MANAGER
   DIRECTOR
-  GLOBAL_ADMIN
+  ADMIN
 }
 
 enum EmploymentType {
@@ -92,6 +92,173 @@ model User {
   @@index([organizationId, userLevel])
   @@index([organizationId, departmentId])
   @@map("users")
+}
+
+model UserDepartmentAccess {
+  id             String    @id @default(cuid())
+  organizationId String
+  userId         String
+  departmentId   String
+  accessLevel    String    @default("MEMBER")
+  grantedById    String?
+  status         String    @default("ACTIVE")
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  createdById    String?
+  updatedById    String?
+  ownerId        String?
+  archivedAt     DateTime?
+
+  @@unique([organizationId, userId, departmentId])
+  @@index([organizationId, departmentId])
+  @@map("user_department_access")
+}
+
+model Session {
+  id             String    @id @default(cuid())
+  organizationId String
+  userId         String
+  tokenHash      String
+  expiresAt      DateTime
+  ipAddress      String?
+  userAgent      String?
+  status         String    @default("ACTIVE")
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  createdById    String?
+  updatedById    String?
+  departmentId   String?
+  ownerId        String?
+  archivedAt     DateTime?
+
+  @@unique([organizationId, tokenHash])
+  @@index([organizationId, userId, expiresAt])
+  @@map("sessions")
+}
+
+model PayrollCoordinationRequest {
+  id                String          @id @default(cuid())
+  organizationId    String
+  requestNumber     String
+  employeeName      String?
+  employeeProfileId String?
+  departmentId      String
+  managerId         String?
+  requestType       String
+  effectiveDate     DateTime?
+  payPeriod         String?
+  safeSummary       String
+  businessReason    String?
+  status            String          @default("SUBMITTED")
+  exportStatus      String          @default("NOT_EXPORTED")
+  priority          RequestPriority @default(NORMAL)
+  comments          Json?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  createdById       String?
+  updatedById       String?
+  ownerId           String?
+  archivedAt        DateTime?
+
+  @@unique([organizationId, requestNumber])
+  @@index([organizationId, departmentId, status])
+  @@map("payroll_coordination_requests")
+}
+
+model AttendanceIssue {
+  id                String    @id @default(cuid())
+  organizationId    String
+  recordNumber      String
+  employeeName      String?
+  employeeProfileId String?
+  departmentId      String
+  managerId         String?
+  issueType         String
+  issueDate         DateTime
+  shiftId           String?
+  description       String
+  payrollImpact     Boolean   @default(false)
+  notes             String?
+  status            String    @default("SUBMITTED")
+  priority          RequestPriority @default(NORMAL)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  createdById       String?
+  updatedById       String?
+  ownerId           String?
+  archivedAt        DateTime?
+
+  @@unique([organizationId, recordNumber])
+  @@index([organizationId, departmentId, status])
+  @@map("attendance_issues")
+}
+
+model Task {
+  id             String          @id @default(cuid())
+  organizationId String
+  title          String
+  description    String?
+  departmentId   String?
+  assignedToId   String?
+  priority       RequestPriority @default(NORMAL)
+  dueDate        DateTime?
+  status         String          @default("NOT_STARTED")
+  linkedTicketId String?
+  linkedOnboardingCaseId String?
+  linkedPayrollRequestId String?
+  linkedTimeOffRequestId String?
+  comments       Json?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  createdById    String?
+  updatedById    String?
+  ownerId        String?
+  archivedAt     DateTime?
+
+  @@index([organizationId, departmentId, status])
+  @@index([organizationId, assignedToId, status])
+  @@map("tasks")
+}
+
+model NotificationLog {
+  id             String    @id @default(cuid())
+  organizationId String
+  channel        String
+  eventType      String
+  recipient      String?
+  title          String
+  body           String
+  status         String    @default("QUEUED")
+  response       Json?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  createdById    String?
+  updatedById    String?
+  departmentId   String?
+  ownerId        String?
+  archivedAt     DateTime?
+
+  @@index([organizationId, eventType, status])
+  @@map("notification_logs")
+}
+
+model AppSetting {
+  id             String    @id @default(cuid())
+  organizationId String
+  key            String
+  value          Json?
+  description    String?
+  status         String    @default("ACTIVE")
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  createdById    String?
+  updatedById    String?
+  departmentId   String?
+  ownerId        String?
+  archivedAt     DateTime?
+
+  @@unique([organizationId, key])
+  @@map("app_settings")
 }
 
 model Role {

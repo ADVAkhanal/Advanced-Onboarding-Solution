@@ -1,8 +1,8 @@
 {
-  "name": "advanced-shop-command-center",
+  "name": "cleanops-command-center",
   "version": "1.0.0",
   "private": true,
-  "description": "Advanced Shop Management & Onboarding Command Center for onboarding, payroll coordination, tickets, tasks, approvals, and operational accountability.",
+  "description": "CleanOps Command Center MVP for department tickets, onboarding, approvals, payroll coordination, checklists, and manager accountability.",
   "engines": {
     "node": ">=20.11.0"
   },
@@ -12,9 +12,9 @@
     "start": "next start -p ${PORT:-3000}",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "test:unit": "vitest run tests/unit",
-    "test:integration": "vitest run tests/integration",
+    "test": "tsx tests/run-tests.ts",
+    "test:unit": "tsx tests/run-tests.ts unit",
+    "test:integration": "tsx tests/run-tests.ts integration",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",

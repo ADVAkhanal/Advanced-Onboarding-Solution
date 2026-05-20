@@ -1,8 +1,9 @@
-import { canAccessDepartment, requirePermission } from "@/lib/auth";
+import { canAccessDepartment, departmentScopeForUser, requirePermission } from "@/lib/auth";
 import { recordAudit } from "@/lib/audit";
 import { handleRouteError, HttpError, ok } from "@/lib/http";
 import { recordNumber } from "@/lib/numbering";
 import { prisma } from "@/lib/prisma";
+import { sendPushoverAlert } from "@/lib/pushover";
 import { ticketCreateSchema } from "@/lib/validators";
 
 export const dynamic = "force-dynamic";
@@ -20,11 +21,9 @@ export async function GET(request: Request) {
     }
 
     const scope =
-      user.userLevel === "LEVEL_1"
+      user.userLevel === "USER"
         ? { OR: [{ requestedById: user.id }, { requestedForId: user.id }] }
-        : user.userLevel === "MANAGER"
-          ? { departmentId: user.departmentId ?? "__none__" }
-          : {};
+      : departmentScopeForUser(user);
 
     const tickets = await prisma.ticket.findMany({
       where: {
@@ -50,7 +49,7 @@ export async function POST(request: Request) {
     const user = await requirePermission("ticket:create");
     const body = ticketCreateSchema.parse(await request.json());
 
-    if (!canAccessDepartment(user, body.departmentId) && user.userLevel !== "LEVEL_1") {
+    if (!canAccessDepartment(user, body.departmentId) && user.userLevel !== "USER") {
       throw new HttpError(403, "You cannot create tickets for that department.", "department_scope_denied");
     }
 
@@ -106,6 +105,18 @@ export async function POST(request: Request) {
       ownerId: created.ownerId,
       after: created
     });
+
+    if (created.priority === "URGENT" || created.priority === "WORK_STOPPAGE") {
+      await sendPushoverAlert({
+        organizationId: user.organizationId,
+        eventType: created.priority === "WORK_STOPPAGE" ? "work_stoppage_ticket_created" : "urgent_ticket_created",
+        title: created.priority === "WORK_STOPPAGE" ? "Work stoppage ticket created" : "Urgent ticket created",
+        message: `${created.ticketNumber}: ${created.title}`,
+        departmentId: created.departmentId,
+        ownerId: created.ownerId,
+        createdById: user.id
+      });
+    }
 
     return ok({ ticket: created }, { status: 201 });
   } catch (error) {

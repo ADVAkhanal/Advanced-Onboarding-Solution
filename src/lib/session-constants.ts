@@ -1,1 +1,1 @@
-export const SESSION_COOKIE = "asc_session";
+export const SESSION_COOKIE = "cleanops_session";

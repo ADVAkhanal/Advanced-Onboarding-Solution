@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { requirePermission } from "@/lib/auth";
+import { canAccessDepartment, requirePermission } from "@/lib/auth";
 import { recordAudit } from "@/lib/audit";
 import { handleRouteError, HttpError, ok } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
@@ -25,6 +25,9 @@ export async function POST(request: Request, context: { params: { id: string } }
 
     if (approval.requesterId === user.id) {
       throw new HttpError(403, "Self-approval is blocked for approval requests.", "self_approval_blocked");
+    }
+    if (approval.departmentId && !canAccessDepartment(user, approval.departmentId)) {
+      throw new HttpError(403, "You do not have access to this approval department.", "department_scope_denied");
     }
 
     const decision = await prisma.$transaction(async (tx) => {

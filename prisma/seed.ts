@@ -5,6 +5,7 @@ import {
   COMMERCIAL_NAME,
   DEPARTMENTS,
   DISCLAIMER,
+  ENCLAVE_COMPATIBLE_STATEMENT,
   PRODUCT_NAME,
   REPORT_TYPES,
   SHORT_NAME,
@@ -18,12 +19,12 @@ const prisma = new PrismaClient();
 
 async function main() {
   const organization = await prisma.organization.upsert({
-    where: { slug: "advanced" },
+    where: { slug: "cleanops" },
     create: {
-      name: "ADVANCED",
-      slug: "advanced",
-      legalName: "Advanced Consulting Inc.",
-      brandName: "ADVANCED",
+      name: process.env.COMPANY_NAME || "CleanOps Customer",
+      slug: "cleanops",
+      legalName: process.env.COMPANY_NAME || "CleanOps Customer",
+      brandName: "CleanOps",
       timezone: "America/Chicago",
       settings: {
         productName: PRODUCT_NAME,
@@ -31,13 +32,14 @@ async function main() {
         commercialName: COMMERCIAL_NAME,
         tagline: TAGLINE,
         footer: BRAND_FOOTER,
-        disclaimer: DISCLAIMER
+        disclaimer: DISCLAIMER,
+        enclaveCompatibleStatement: ENCLAVE_COMPATIBLE_STATEMENT
       }
     },
     update: {
-      name: "ADVANCED",
-      legalName: "Advanced Consulting Inc.",
-      brandName: "ADVANCED"
+      name: process.env.COMPANY_NAME || "CleanOps Customer",
+      legalName: process.env.COMPANY_NAME || "CleanOps Customer",
+      brandName: "CleanOps"
     }
   });
 
@@ -55,9 +57,9 @@ async function main() {
 
   const roles = [
     {
-      systemKey: "level_1_user",
-      name: "Level 1 User",
-      userLevel: UserLevel.LEVEL_1,
+      systemKey: "user",
+      name: "User",
+      userLevel: UserLevel.USER,
       description: "Employee, contractor, temp worker, or shop-floor user with self-service access."
     },
     {
@@ -73,9 +75,9 @@ async function main() {
       description: "Cross-department oversight and escalation authority."
     },
     {
-      systemKey: "global_admin_ceo",
-      name: "Global Admin / CEO",
-      userLevel: UserLevel.GLOBAL_ADMIN,
+      systemKey: "admin",
+      name: "Admin",
+      userLevel: UserLevel.ADMIN,
       description: "Full system owner and executive controller."
     }
   ];
@@ -166,7 +168,7 @@ async function main() {
         routingRules: {
           managersSeeOwnDepartment: true,
           directorsSeeAssignedDepartments: true,
-          globalAdminsSeeAll: true
+          adminsSeeAll: true
         },
         metricsConfig: {
           trackAging: true,
@@ -221,9 +223,9 @@ async function main() {
     if (!existing) {
       await prisma.jobTitle.create({
         data: {
-        organizationId: organization.id,
-        title,
-        code: slugify(title).toUpperCase()
+          organizationId: organization.id,
+          title,
+          code: slugify(title).toUpperCase()
         }
       });
     }
@@ -249,6 +251,11 @@ async function main() {
       key: "product.disclaimer",
       value: DISCLAIMER,
       description: "Persistent disclaimer shown across the app."
+    },
+    {
+      key: "product.enclaveCompatibleStatement",
+      value: ENCLAVE_COMPATIBLE_STATEMENT,
+      description: "Safe-use language for regulated customer environments."
     },
     {
       key: "payroll.safety",
@@ -287,8 +294,8 @@ async function main() {
     });
   }
 
-  const adminEmail = process.env.SEED_ADMIN_EMAIL;
-  const adminPassword = process.env.SEED_ADMIN_PASSWORD;
+  const adminEmail = process.env.BOOTSTRAP_ADMIN_EMAIL ?? process.env.SEED_ADMIN_EMAIL;
+  const adminPassword = process.env.BOOTSTRAP_ADMIN_PASSWORD ?? process.env.SEED_ADMIN_PASSWORD;
   if (adminEmail && adminPassword) {
     const passwordHash = await bcrypt.hash(adminPassword, 12);
     const admin = await prisma.user.upsert({
@@ -299,18 +306,18 @@ async function main() {
         passwordHash,
         firstName: "System",
         lastName: "Administrator",
-        title: "Global Admin / CEO",
-        userLevel: UserLevel.GLOBAL_ADMIN
+        title: "Admin",
+        userLevel: UserLevel.ADMIN
       },
       update: {
         passwordHash,
-        userLevel: UserLevel.GLOBAL_ADMIN,
+        userLevel: UserLevel.ADMIN,
         status: "ACTIVE"
       }
     });
 
     const adminRole = await prisma.role.findFirstOrThrow({
-      where: { organizationId: organization.id, systemKey: "global_admin_ceo" }
+      where: { organizationId: organization.id, systemKey: "admin" }
     });
 
     await prisma.userRole.upsert({

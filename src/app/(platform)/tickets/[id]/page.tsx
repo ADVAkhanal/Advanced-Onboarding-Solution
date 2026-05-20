@@ -10,7 +10,71 @@ export default async function TicketCenterDetailPage({ params }: { params: { id:
   const center = await prisma.ticketCenter.findFirst({
     where: { id: params.id, organizationId: user.organizationId, archivedAt: null }
   });
-  if (!center || !canAccessDepartment(user, center.departmentId)) {
+  if (!center) {
+    const ticket = await prisma.ticket.findFirst({
+      where: { id: params.id, organizationId: user.organizationId, archivedAt: null }
+    });
+    if (!ticket || !canAccessDepartment(user, ticket.departmentId)) {
+      notFound();
+    }
+    const [department, comments, history] = await Promise.all([
+      prisma.department.findFirst({ where: { id: ticket.departmentId, organizationId: user.organizationId } }),
+      prisma.ticketComment.findMany({ where: { organizationId: user.organizationId, ticketId: ticket.id, archivedAt: null }, orderBy: { createdAt: "asc" } }),
+      prisma.ticketStatusHistory.findMany({ where: { organizationId: user.organizationId, ticketId: ticket.id, archivedAt: null }, orderBy: { createdAt: "desc" } })
+    ]);
+
+    return (
+      <>
+        <div className="page-head">
+          <div>
+            <p className="eyebrow">{department?.name ?? "Department"} · Ticket Detail</p>
+            <h1>{ticket.ticketNumber}: {ticket.title}</h1>
+            <p className="subhead">{ticket.description}</p>
+          </div>
+          <span className={ticket.priority === "WORK_STOPPAGE" || ticket.priority === "URGENT" ? "pill red" : "pill"}>{ticket.priority.replaceAll("_", " ")}</span>
+        </div>
+
+        <div className="grid two-col">
+          <section className="card">
+            <div className="section-title"><h2>Status & Ownership</h2><span className="pill">{ticket.status}</span></div>
+            <div className="card-pad">
+              <ul className="compact-list">
+                <li><span>Assigned owner</span><strong>{ticket.assignedOwnerId ?? ticket.ownerId ?? "Unassigned"}</strong></li>
+                <li><span>Due date</span><strong>{ticket.dueDate ? new Intl.DateTimeFormat("en", { month: "short", day: "numeric", year: "numeric" }).format(ticket.dueDate) : "Not set"}</strong></li>
+                <li><span>Reopened count</span><strong>{ticket.reopenedCount}</strong></li>
+                <li><span>Closed</span><strong>{ticket.closedAt ? "Yes" : "No"}</strong></li>
+              </ul>
+            </div>
+          </section>
+
+          <section className="card">
+            <div className="section-title"><h2>Resolution</h2><span className="pill green">Audit logged</span></div>
+            <div className="card-pad">
+              <p className="subhead">{ticket.resolutionNotes ?? "No resolution notes recorded yet."}</p>
+            </div>
+          </section>
+        </div>
+
+        <div className="grid two-col" style={{ marginTop: 14 }}>
+          <section className="card">
+            <div className="section-title"><h2>Comments</h2><span className="pill">{comments.length}</span></div>
+            <div className="card-pad">
+              {comments.length ? <ul className="compact-list">{comments.map((comment) => <li key={comment.id}><span>{comment.body}</span><strong>{new Intl.DateTimeFormat("en", { month: "short", day: "numeric" }).format(comment.createdAt)}</strong></li>)}</ul> : <div className="empty">No comments have been added yet.</div>}
+            </div>
+          </section>
+
+          <section className="card">
+            <div className="section-title"><h2>Status History</h2><span className="pill">{history.length}</span></div>
+            <div className="card-pad">
+              {history.length ? <ul className="compact-list">{history.map((item) => <li key={item.id}><span>{item.fromStatus ?? "Created"} to {item.toStatus}</span><strong>{new Intl.DateTimeFormat("en", { month: "short", day: "numeric" }).format(item.createdAt)}</strong></li>)}</ul> : <div className="empty">No status history has been recorded yet.</div>}
+            </div>
+          </section>
+        </div>
+      </>
+    );
+  }
+
+  if (!canAccessDepartment(user, center.departmentId)) {
     notFound();
   }
 
@@ -49,7 +113,7 @@ export default async function TicketCenterDetailPage({ params }: { params: { id:
             <ul className="compact-list">
               <li><span>Managers see assigned department</span><strong>Yes</strong></li>
               <li><span>Directors see oversight departments</span><strong>Yes</strong></li>
-              <li><span>Global Admin / CEO sees all</span><strong>Yes</strong></li>
+              <li><span>Admin sees all</span><strong>Yes</strong></li>
               <li><span>Owner and due date required</span><strong>Yes</strong></li>
             </ul>
           </div>

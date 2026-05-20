@@ -1,5 +1,5 @@
 import { Prisma } from "@prisma/client";
-import { requirePermission } from "@/lib/auth";
+import { departmentScopeForUser, requirePermission } from "@/lib/auth";
 import { recordAudit } from "@/lib/audit";
 import { handleRouteError, ok } from "@/lib/http";
 import { recordNumber } from "@/lib/numbering";
@@ -15,7 +15,7 @@ export async function GET() {
       where: {
         organizationId: user.organizationId,
         archivedAt: null,
-        ...(user.userLevel === "MANAGER" ? { departmentId: user.departmentId ?? "__none__" } : {})
+        ...departmentScopeForUser(user)
       },
       orderBy: [{ generatedAt: "desc" }],
       take: 100

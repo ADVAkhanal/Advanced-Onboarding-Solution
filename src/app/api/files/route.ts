@@ -1,5 +1,4 @@
 import { createHash, randomUUID } from "crypto";
-import { mkdir, writeFile } from "fs/promises";
 import path from "path";
 import { requirePermission } from "@/lib/auth";
 import { recordAudit } from "@/lib/audit";
@@ -32,12 +31,7 @@ export async function POST(request: Request) {
     const bytes = Buffer.from(await file.arrayBuffer());
     const checksum = createHash("sha256").update(bytes).digest("hex");
     const extension = path.extname(file.name).toLowerCase();
-    const storageKey = `${user.organizationId}/${randomUUID()}${extension}`;
-    const uploadRoot = path.resolve(process.env.UPLOAD_DIR ?? "./uploads");
-    const targetPath = path.join(uploadRoot, storageKey);
-
-    await mkdir(path.dirname(targetPath), { recursive: true });
-    await writeFile(targetPath, bytes, { flag: "wx" });
+    const storageKey = `metadata-only/${user.organizationId}/${randomUUID()}${extension}`;
 
     const metadata = await prisma.fileMetadata.create({
       data: {

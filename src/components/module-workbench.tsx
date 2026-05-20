@@ -109,6 +109,9 @@ export function ModuleWorkbench({ module }: { module: WorkflowModule }) {
               <span className="pill">Server Validated</span>
             </div>
             <div className="card-pad">
+              <div className="module-note" style={{ marginBottom: 12 }}>
+                Do not enter CUI, SSNs, banking details, card data, medical records, tax credentials, passwords, API keys, or cybersecurity secrets.
+              </div>
               <div className="form-grid">
                 <label>
                   Title

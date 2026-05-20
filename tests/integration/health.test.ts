@@ -7,7 +7,8 @@ describe("/api/health", () => {
     const payload = await response.json();
 
     expect(response.status).toBe(200);
-    expect(payload.ok).toBe(true);
-    expect(payload.data.service).toBe("advanced-shop-command-center");
+    expect(payload.appName).toBe("CleanOps Command Center");
+    expect(payload).toHaveProperty("databaseConnected");
+    expect(payload).toHaveProperty("pushoverEnabled");
   });
 });

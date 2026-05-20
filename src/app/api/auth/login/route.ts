@@ -1,5 +1,6 @@
 import { setSessionCookie, verifyPassword } from "@/lib/auth";
 import { recordAudit } from "@/lib/audit";
+import { ensureBootstrapAdmin } from "@/lib/bootstrap";
 import { fail, handleRouteError, ok } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { loginSchema } from "@/lib/validators";
@@ -8,6 +9,7 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
+    await ensureBootstrapAdmin();
     const body = loginSchema.parse(await request.json());
     const user = await prisma.user.findFirst({
       where: {
@@ -18,6 +20,16 @@ export async function POST(request: Request) {
     });
 
     if (!user || !(await verifyPassword(body.password, user.passwordHash))) {
+      const organization = await prisma.organization.findFirst({ orderBy: { createdAt: "asc" } });
+      if (organization) {
+        await recordAudit({
+          organizationId: organization.id,
+          action: "auth.login_failed",
+          entityType: "user",
+          outcome: "FAILED",
+          reason: `Login failed for ${body.email}`
+        });
+      }
       return fail(401, "Invalid email or password.", "invalid_credentials");
     }
 

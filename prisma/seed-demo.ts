@@ -8,7 +8,7 @@ async function main() {
     throw new Error("Demo seed is disabled. Set ALLOW_DEMO_SEED=true only in a non-production sandbox.");
   }
 
-  const organization = await prisma.organization.findUniqueOrThrow({ where: { slug: "advanced" } });
+  const organization = await prisma.organization.findUniqueOrThrow({ where: { slug: "cleanops" } });
   const department = await prisma.department.findFirstOrThrow({ where: { organizationId: organization.id, code: "PROD" } });
   const managerRole = await prisma.role.findFirstOrThrow({ where: { organizationId: organization.id, systemKey: "manager" } });
   const passwordHash = await bcrypt.hash("ChangeMeDemoOnly!123", 12);

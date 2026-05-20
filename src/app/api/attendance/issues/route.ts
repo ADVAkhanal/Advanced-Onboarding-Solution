@@ -1,4 +1,4 @@
-import { canAccessDepartment, requirePermission } from "@/lib/auth";
+import { canAccessDepartment, departmentScopeForUser, requirePermission } from "@/lib/auth";
 import { recordAudit } from "@/lib/audit";
 import { handleRouteError, HttpError, ok } from "@/lib/http";
 import { recordNumber } from "@/lib/numbering";
@@ -22,7 +22,7 @@ export async function GET(request: Request) {
         organizationId: user.organizationId,
         archivedAt: null,
         ...(departmentId ? { departmentId } : {}),
-        ...(user.userLevel === "MANAGER" ? { departmentId: user.departmentId ?? "__none__" } : {})
+        ...departmentScopeForUser(user)
       },
       orderBy: [{ issueDate: "desc" }],
       take: 100
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
   try {
     const user = await requirePermission("attendance:create");
     const body = attendanceIssueCreateSchema.parse(await request.json());
-    if (!canAccessDepartment(user, body.departmentId) && user.userLevel !== "LEVEL_1") {
+    if (!canAccessDepartment(user, body.departmentId) && user.userLevel !== "USER") {
       throw new HttpError(403, "You cannot create attendance records for that department.", "department_scope_denied");
     }
 

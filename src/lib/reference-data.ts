@@ -35,19 +35,21 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-export const PRODUCT_NAME = "Advanced Shop Management & Onboarding Command Center";
-export const SHORT_NAME = "Advanced Shop Command Center";
+export const PRODUCT_NAME = process.env.APP_NAME ?? "CleanOps Command Center";
+export const SHORT_NAME = "CleanOps";
 export const COMMERCIAL_NAME = "CleanOps Command Center";
-export const TAGLINE = "Onboarding · Payroll · Tickets · Tasks · Managers · Accountability";
-export const BRAND_FOOTER = "Stronger Shops. Stronger Teams. Real Results.";
+export const TAGLINE = "Tickets · Onboarding · Approvals · Payroll Coordination · Manager Accountability";
+export const BRAND_FOOTER = "Organized shops. Accountable managers. Trackable work.";
 export const DISCLAIMER =
-  "This platform supports internal management, onboarding, payroll coordination, department ticketing, productivity tracking, and employee lifecycle documentation. It does not process payments, store banking credentials, replace payroll tax systems, or directly modify HR, payroll, accounting, IT, or production systems unless an approved integration is explicitly configured.";
+  "This platform supports internal operations, department tickets, onboarding, approvals, payroll coordination, checklists, and manager accountability. It is not designed to store CUI, payment-card data, bank information, full SSNs, medical records, tax credentials, payroll passwords, API keys, or cybersecurity secrets.";
+export const ENCLAVE_COMPATIBLE_STATEMENT =
+  "Customers with regulated environments may access this platform from within their own approved secure browser, VDI, or enclave environment, but the customer remains responsible for controlling what data is entered, uploaded, exported, or integrated. This platform is not a CUI enclave and must not be used to store or process CUI unless a future compliant deployment is explicitly designed, contracted, and assessed.";
 
 export const USER_LEVELS = [
   {
-    key: "LEVEL_1",
-    label: "Level 1 User",
-    purpose: "Standard employee, new hire, contractor, temp worker, or shop-floor user."
+    key: "USER",
+    label: "User",
+    purpose: "Standard employee, shop-floor user, contractor, or general self-service user."
   },
   {
     key: "MANAGER",
@@ -60,9 +62,9 @@ export const USER_LEVELS = [
     purpose: "Cross-department oversight, escalation authority, and operational accountability."
   },
   {
-    key: "GLOBAL_ADMIN",
-    label: "Global Admin / CEO",
-    purpose: "System owner, executive controller, and full administrator."
+    key: "ADMIN",
+    label: "Admin",
+    purpose: "Global Admin, CEO, or system owner with full administrative control."
   }
 ] as const;
 
@@ -887,21 +889,16 @@ export const NAVIGATION = [
   "executive-command-dashboard",
   "department-ticket-centers",
   "onboarding-case-management",
-  "scheduling-coverage",
-  "capacity-mps",
-  "first-piece-runs",
-  "npi-projects",
-  "sales-operations",
-  "employee-directory",
-  "attendance-schedule-issue-center",
   "payroll-coordination-center",
-  "approval-queue",
   "time-off-request-center",
+  "attendance-schedule-issue-center",
+  "manager-task-board",
   "recurring-checklist-center",
   "department-productivity-board",
+  "approval-queue",
   "reports-exports",
-  "internal-announcements",
   "admin-settings",
+  "employee-directory",
   "audit-log"
 ] as const;
 

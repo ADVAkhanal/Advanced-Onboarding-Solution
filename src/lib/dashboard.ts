@@ -8,7 +8,12 @@ export type CommandCenterData = Awaited<ReturnType<typeof getCommandCenterData>>
 
 export async function getCommandCenterData(user: AuthenticatedUser) {
   const now = new Date();
-  const departmentScope = user.userLevel === "MANAGER" ? { departmentId: user.departmentId ?? "__none__" } : {};
+  const departmentScope =
+    user.userLevel === "MANAGER"
+      ? { departmentId: user.departmentId ?? "__none__" }
+      : user.userLevel === "DIRECTOR" && !user.allDepartmentAccess
+        ? { departmentId: { in: user.departmentAccessIds.length ? user.departmentAccessIds : [user.departmentId ?? "__none__"] } }
+        : {};
 
   const [
     openTickets,
@@ -40,7 +45,18 @@ export async function getCommandCenterData(user: AuthenticatedUser) {
     prisma.lifecycleEvent.count({ where: { organizationId: user.organizationId, status: { in: ["Open", "In Review"] }, archivedAt: null, ...departmentScope } }),
     prisma.checklistCompletion.count({ where: { organizationId: user.organizationId, status: "Missed", archivedAt: null, ...departmentScope } }),
     prisma.contractorExpiration.count({ where: { organizationId: user.organizationId, expirationDate: { gte: now }, status: "Upcoming", archivedAt: null, ...departmentScope } }),
-    prisma.department.findMany({ where: { organizationId: user.organizationId, archivedAt: null, ...(user.userLevel === "MANAGER" ? { id: user.departmentId ?? "__none__" } : {}) }, orderBy: { name: "asc" }, take: 20 }),
+    prisma.department.findMany({
+      where: {
+        organizationId: user.organizationId,
+        archivedAt: null,
+        ...(user.userLevel === "MANAGER" ? { id: user.departmentId ?? "__none__" } : {}),
+        ...(user.userLevel === "DIRECTOR" && !user.allDepartmentAccess
+          ? { id: { in: user.departmentAccessIds.length ? user.departmentAccessIds : [user.departmentId ?? "__none__"] } }
+          : {})
+      },
+      orderBy: { name: "asc" },
+      take: 20
+    }),
     prisma.ticket.findMany({ where: { organizationId: user.organizationId, archivedAt: null, ...departmentScope }, orderBy: { updatedAt: "desc" }, take: 8 }),
     prisma.onboardingCase.findMany({ where: { organizationId: user.organizationId, startDate: { gte: now }, archivedAt: null, ...departmentScope }, orderBy: { startDate: "asc" }, take: 5 }),
     prisma.payrollPeriod.findMany({ where: { organizationId: user.organizationId, archivedAt: null }, orderBy: { startDate: "desc" }, take: 1 }),

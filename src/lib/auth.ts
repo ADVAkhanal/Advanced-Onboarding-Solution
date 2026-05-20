@@ -22,6 +22,8 @@ export type AuthenticatedUser = Pick<
   "id" | "organizationId" | "email" | "firstName" | "lastName" | "title" | "userLevel" | "departmentId" | "managerId" | "directorId"
 > & {
   permissions: PermissionKey[];
+  departmentAccessIds: string[];
+  allDepartmentAccess: boolean;
 };
 
 function secret() {
@@ -153,6 +155,15 @@ export async function getCurrentUser(): Promise<AuthenticatedUser | null> {
     return null;
   }
 
+  const departmentAccess = await prisma.userDepartmentAccess.findMany({
+    where: {
+      organizationId: user.organizationId,
+      userId: user.id,
+      status: "ACTIVE",
+      archivedAt: null
+    }
+  });
+
   return {
     id: user.id,
     organizationId: user.organizationId,
@@ -164,7 +175,9 @@ export async function getCurrentUser(): Promise<AuthenticatedUser | null> {
     departmentId: user.departmentId,
     managerId: user.managerId,
     directorId: user.directorId,
-    permissions: await loadPermissions(user)
+    permissions: await loadPermissions(user),
+    departmentAccessIds: departmentAccess.map((access) => access.departmentId),
+    allDepartmentAccess: departmentAccess.some((access) => access.accessLevel === "ALL")
   };
 }
 
@@ -188,11 +201,24 @@ export function canAccessDepartment(user: AuthenticatedUser, departmentId?: stri
   if (!departmentId) {
     return true;
   }
-  if (user.userLevel === "GLOBAL_ADMIN" || user.userLevel === "DIRECTOR") {
+  if (user.userLevel === "ADMIN") {
     return true;
+  }
+  if (user.userLevel === "DIRECTOR") {
+    return user.allDepartmentAccess || user.departmentAccessIds.includes(departmentId) || user.departmentId === departmentId;
   }
   if (user.userLevel === "MANAGER") {
     return user.departmentId === departmentId;
   }
   return false;
+}
+
+export function departmentScopeForUser(user: AuthenticatedUser) {
+  if (user.userLevel === "MANAGER") {
+    return { departmentId: user.departmentId ?? "__none__" };
+  }
+  if (user.userLevel === "DIRECTOR" && !user.allDepartmentAccess) {
+    return { departmentId: { in: user.departmentAccessIds.length ? user.departmentAccessIds : [user.departmentId ?? "__none__"] } };
+  }
+  return {};
 }

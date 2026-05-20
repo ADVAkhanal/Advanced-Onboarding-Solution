@@ -26,6 +26,19 @@ export const ticketCreateSchema = z.object({
   relatedPayrollRequestId: z.string().trim().min(1).optional()
 });
 
+export const ticketUpdateSchema = z.object({
+  status: z.enum(["New", "Assigned", "In Progress", "Waiting", "Blocked", "Escalated", "Resolved", "Closed", "Cancelled", "Reopened"]).optional(),
+  assignedOwnerId: z.string().trim().min(1).optional().nullable(),
+  priority: z.enum(["LOW", "NORMAL", "HIGH", "URGENT", "WORK_STOPPAGE"]).optional(),
+  dueDate: z.string().datetime().optional().nullable(),
+  resolutionNotes: optionalText.nullable(),
+  reopen: z.boolean().optional()
+});
+
+export const ticketCommentSchema = z.object({
+  body: z.string().trim().min(1).max(4000)
+});
+
 export const onboardingCreateSchema = z.object({
   firstName: z.string().trim().min(1).max(80),
   lastName: z.string().trim().min(1).max(80),
@@ -113,6 +126,18 @@ export const approvalCreateSchema = z.object({
   priority: z.enum(["LOW", "NORMAL", "HIGH", "URGENT", "WORK_STOPPAGE"]).default("NORMAL"),
   dueDate: z.string().datetime().optional(),
   summary: z.string().trim().min(5).max(2000)
+});
+
+export const taskCreateSchema = z.object({
+  title: z.string().trim().min(3).max(180),
+  description: optionalText,
+  departmentId: z.string().trim().min(1).optional(),
+  ownerId: z.string().trim().min(1).optional(),
+  priority: z.enum(["LOW", "NORMAL", "HIGH", "URGENT", "WORK_STOPPAGE"]).default("NORMAL"),
+  dueDate: z.string().datetime().optional(),
+  linkedTicketId: z.string().trim().min(1).optional(),
+  linkedOnboardingCaseId: z.string().trim().min(1).optional(),
+  linkedPayrollRequestId: z.string().trim().min(1).optional()
 });
 
 export const reportCreateSchema = z.object({

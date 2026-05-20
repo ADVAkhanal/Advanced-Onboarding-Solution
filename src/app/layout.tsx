@@ -4,7 +4,7 @@ import { PRODUCT_NAME } from "@/lib/reference-data";
 
 export const metadata: Metadata = {
   title: PRODUCT_NAME,
-  description: "Internal command center for onboarding, payroll coordination, tickets, tasks, approvals, and manager accountability."
+  description: "Secure internal operations command center for department tickets, onboarding, approvals, payroll coordination, checklists, and manager accountability."
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

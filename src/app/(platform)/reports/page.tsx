@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requirePermission } from "@/lib/auth";
+import { departmentScopeForUser, requirePermission } from "@/lib/auth";
 import { REPORT_TYPES } from "@/lib/reference-data";
 import { prisma } from "@/lib/prisma";
 
@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export default async function ReportsPage() {
   const user = await requirePermission("report:view");
   const reports = await prisma.report.findMany({
-    where: { organizationId: user.organizationId, archivedAt: null, ...(user.userLevel === "MANAGER" ? { departmentId: user.departmentId ?? "__none__" } : {}) },
+    where: { organizationId: user.organizationId, archivedAt: null, ...departmentScopeForUser(user) },
     orderBy: { generatedAt: "desc" },
     take: 50
   });
@@ -21,7 +21,10 @@ export default async function ReportsPage() {
           <h1>Management Reports</h1>
           <p className="subhead">Branded internal-use reporting for management, onboarding, payroll coordination, department tickets, and productivity.</p>
         </div>
-        <Link className="button primary" href="/workflows/reports-exports">Generate Report</Link>
+        <div className="actions">
+          <Link className="button primary" href="/workflows/reports-exports">Generate Report</Link>
+          <Link className="button" href="/api/reports/csv">Export Open Tickets CSV</Link>
+        </div>
       </div>
 
       <section className="card">

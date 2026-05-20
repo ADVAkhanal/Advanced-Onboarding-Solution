@@ -1,8 +1,9 @@
-import { requirePermission } from "@/lib/auth";
+import { departmentScopeForUser, requirePermission } from "@/lib/auth";
 import { recordAudit } from "@/lib/audit";
 import { handleRouteError, ok } from "@/lib/http";
 import { recordNumber } from "@/lib/numbering";
 import { prisma } from "@/lib/prisma";
+import { sendPushoverAlert } from "@/lib/pushover";
 import { approvalCreateSchema } from "@/lib/validators";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +15,7 @@ export async function GET() {
       where: {
         organizationId: user.organizationId,
         archivedAt: null,
-        ...(user.userLevel === "MANAGER" ? { departmentId: user.departmentId ?? "__none__" } : {})
+        ...departmentScopeForUser(user)
       },
       orderBy: [{ dueDate: "asc" }, { updatedAt: "desc" }],
       take: 100
@@ -57,6 +58,16 @@ export async function POST(request: Request) {
       departmentId: created.departmentId,
       ownerId: created.ownerId,
       after: created
+    });
+
+    await sendPushoverAlert({
+      organizationId: user.organizationId,
+      eventType: "approval_request_created",
+      title: "Approval request created",
+      message: `${created.requestNumber}: ${created.approvalType}`,
+      departmentId: created.departmentId,
+      ownerId: created.ownerId,
+      createdById: user.id
     });
 
     return ok({ approval: created }, { status: 201 });

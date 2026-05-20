@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requirePermission } from "@/lib/auth";
+import { departmentScopeForUser, requirePermission } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -10,7 +10,7 @@ export default async function OnboardingCasesPage() {
     where: {
       organizationId: user.organizationId,
       archivedAt: null,
-      ...(user.userLevel === "MANAGER" ? { departmentId: user.departmentId ?? "__none__" } : {})
+      ...departmentScopeForUser(user)
     },
     orderBy: [{ startDate: "asc" }],
     take: 100
