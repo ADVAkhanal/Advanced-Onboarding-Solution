@@ -1,0 +1,10 @@
+.env
+.env.local
+.env.production
+.next
+node_modules
+coverage
+dist
+*.log
+uploads/*
+!uploads/.gitkeep

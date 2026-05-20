@@ -1,0 +1,125 @@
+import type { UserLevel } from "@prisma/client";
+
+export const PERMISSIONS = [
+  ["dashboard:view", "View dashboards"],
+  ["ticket:view", "View tickets"],
+  ["ticket:create", "Create tickets"],
+  ["ticket:manage", "Manage department tickets"],
+  ["ticket:escalate", "Escalate tickets"],
+  ["onboarding:view", "View onboarding cases"],
+  ["onboarding:create", "Create onboarding requests"],
+  ["onboarding:manage", "Manage onboarding cases"],
+  ["onboarding:approve", "Approve onboarding items"],
+  ["payroll:view", "View payroll coordination"],
+  ["payroll:create", "Create payroll coordination requests"],
+  ["payroll:approve", "Approve payroll coordination requests"],
+  ["payroll:export", "Generate safe payroll exports"],
+  ["timeoff:view", "View time-off requests"],
+  ["timeoff:create", "Create time-off requests"],
+  ["timeoff:approve", "Approve time-off requests"],
+  ["attendance:view", "View attendance and schedule issues"],
+  ["attendance:create", "Create attendance and schedule issues"],
+  ["attendance:manage", "Manage attendance and schedule issues"],
+  ["employee:view", "View employee records within scope"],
+  ["employee:manage", "Manage employee lifecycle records"],
+  ["task:view", "View productivity tasks"],
+  ["task:create", "Create productivity tasks"],
+  ["task:manage", "Manage productivity tasks"],
+  ["checklist:manage", "Manage recurring checklists"],
+  ["approval:view", "View approval queues"],
+  ["approval:decide", "Decide approval requests"],
+  ["report:view", "View reports"],
+  ["report:export", "Export reports"],
+  ["file:upload", "Upload allowed non-sensitive files"],
+  ["note:view", "View manager notes within visibility"],
+  ["note:manage", "Manage manager notes and follow-ups"],
+  ["announcement:manage", "Manage announcements"],
+  ["admin:manage", "Manage global settings"],
+  ["audit:view", "View audit log"]
+] as const;
+
+export type PermissionKey = (typeof PERMISSIONS)[number][0];
+
+const levelPermissions: Record<UserLevel, PermissionKey[]> = {
+  LEVEL_1: [
+    "dashboard:view",
+    "ticket:view",
+    "ticket:create",
+    "onboarding:view",
+    "payroll:create",
+    "timeoff:view",
+    "timeoff:create",
+    "attendance:create",
+    "task:view",
+    "file:upload"
+  ],
+  MANAGER: [
+    "dashboard:view",
+    "ticket:view",
+    "ticket:create",
+    "ticket:manage",
+    "ticket:escalate",
+    "onboarding:view",
+    "onboarding:create",
+    "onboarding:manage",
+    "payroll:view",
+    "payroll:create",
+    "timeoff:view",
+    "timeoff:approve",
+    "attendance:view",
+    "attendance:manage",
+    "employee:view",
+    "task:view",
+    "task:create",
+    "task:manage",
+    "checklist:manage",
+    "approval:view",
+    "approval:decide",
+    "report:view",
+    "file:upload",
+    "note:view",
+    "note:manage",
+    "announcement:manage"
+  ],
+  DIRECTOR: [
+    "dashboard:view",
+    "ticket:view",
+    "ticket:create",
+    "ticket:manage",
+    "ticket:escalate",
+    "onboarding:view",
+    "onboarding:create",
+    "onboarding:manage",
+    "onboarding:approve",
+    "payroll:view",
+    "payroll:create",
+    "payroll:approve",
+    "timeoff:view",
+    "timeoff:approve",
+    "attendance:view",
+    "attendance:manage",
+    "employee:view",
+    "employee:manage",
+    "task:view",
+    "task:create",
+    "task:manage",
+    "checklist:manage",
+    "approval:view",
+    "approval:decide",
+    "report:view",
+    "report:export",
+    "file:upload",
+    "note:view",
+    "note:manage",
+    "announcement:manage"
+  ],
+  GLOBAL_ADMIN: PERMISSIONS.map(([key]) => key)
+};
+
+export function permissionsForLevel(level: UserLevel) {
+  return levelPermissions[level];
+}
+
+export function can(level: UserLevel, permission: PermissionKey) {
+  return permissionsForLevel(level).includes(permission);
+}

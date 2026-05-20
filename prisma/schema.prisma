@@ -1,0 +1,1970 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserLevel {
+  LEVEL_1
+  MANAGER
+  DIRECTOR
+  GLOBAL_ADMIN
+}
+
+enum EmploymentType {
+  EMPLOYEE
+  CONTRACTOR
+  TEMP
+  INTERN
+  SEASONAL
+}
+
+enum VisibilityLevel {
+  PRIVATE_TO_MANAGER
+  VISIBLE_TO_DIRECTOR
+  VISIBLE_TO_HR_ADMIN
+  VISIBLE_TO_EMPLOYEE
+  EXECUTIVE_RESTRICTED
+}
+
+enum RequestPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+  WORK_STOPPAGE
+}
+
+enum ExportFormat {
+  PDF
+  DOCX
+  XLSX
+  CSV
+  MARKDOWN
+  HTML
+  JSON
+}
+
+model Organization {
+  id          String    @id @default(cuid())
+  name        String
+  slug        String    @unique
+  legalName   String?
+  brandName   String?
+  logoUrl     String?
+  timezone    String    @default("America/Chicago")
+  settings    Json?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  createdById String?
+  updatedById String?
+  archivedAt  DateTime?
+
+  @@map("organizations")
+}
+
+model User {
+  id             String     @id @default(cuid())
+  organizationId String
+  email          String
+  passwordHash   String
+  firstName      String
+  lastName       String
+  title          String?
+  phone          String?
+  avatarUrl      String?
+  userLevel      UserLevel
+  status         String     @default("ACTIVE")
+  departmentId   String?
+  managerId      String?
+  directorId     String?
+  lastLoginAt    DateTime?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  createdById    String?
+  updatedById    String?
+  archivedAt     DateTime?
+
+  @@unique([organizationId, email])
+  @@index([organizationId, userLevel])
+  @@index([organizationId, departmentId])
+  @@map("users")
+}
+
+model Role {
+  id             String    @id @default(cuid())
+  organizationId String
+  name           String
+  description    String?
+  userLevel      UserLevel
+  systemKey      String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  createdById    String?
+  updatedById    String?
+  archivedAt     DateTime?
+
+  @@unique([organizationId, systemKey])
+  @@map("roles")
+}
+
+model Permission {
+  id             String   @id @default(cuid())
+  organizationId String
+  key            String
+  label          String
+  description    String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdById    String?
+  updatedById    String?
+  archivedAt     DateTime?
+
+  @@unique([organizationId, key])
+  @@map("permissions")
+}
+
+model UserRole {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String
+  roleId         String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdById    String?
+  updatedById    String?
+  archivedAt     DateTime?
+
+  @@unique([organizationId, userId, roleId])
+  @@index([organizationId, userId])
+  @@map("user_roles")
+}
+
+model RolePermission {
+  id             String   @id @default(cuid())
+  organizationId String
+  roleId         String
+  permissionId   String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdById    String?
+  updatedById    String?
+  archivedAt     DateTime?
+
+  @@unique([organizationId, roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model Department {
+  id             String    @id @default(cuid())
+  organizationId String
+  name           String
+  code           String
+  description    String?
+  directorId     String?
+  managerId      String?
+  locationId     String?
+  active         Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  createdById    String?
+  updatedById    String?
+  ownerId        String?
+  archivedAt     DateTime?
+
+  @@unique([organizationId, code])
+  @@index([organizationId, managerId])
+  @@map("departments")
+}
+
+model Location {
+  id             String    @id @default(cuid())
+  organizationId String
+  name           String
+  code           String
+  address        String?
+  city           String?
+  state          String?
+  postalCode     String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  createdById    String?
+  updatedById    String?
+  archivedAt     DateTime?
+
+  @@unique([organizationId, code])
+  @@map("locations")
+}
+
+model Shift {
+  id             String    @id @default(cuid())
+  organizationId String
+  name           String
+  code           String
+  startTime      String?
+  endTime        String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  createdById    String?
+  updatedById    String?
+  archivedAt     DateTime?
+
+  @@unique([organizationId, code])
+  @@map("shifts")
+}
+
+model Team {
+  id             String    @id @default(cuid())
+  organizationId String
+  departmentId   String
+  name           String
+  managerId      String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  createdById    String?
+  updatedById    String?
+  ownerId        String?
+  archivedAt     DateTime?
+
+  @@index([organizationId, departmentId])
+  @@map("teams")
+}
+
+model JobTitle {
+  id             String    @id @default(cuid())
+  organizationId String
+  departmentId   String?
+  title          String
+  code           String?
+  description    String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  createdById    String?
+  updatedById    String?
+  archivedAt     DateTime?
+
+  @@index([organizationId, departmentId])
+  @@map("job_titles")
+}
+
+model TicketCenter {
+  id             String    @id @default(cuid())
+  organizationId String
+  departmentId   String
+  name           String
+  slug           String
+  managerId      String?
+  directorId     String?
+  routingRules   Json?
+  metricsConfig  Json?
+  active         Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  createdById    String?
+  updatedById    String?
+  ownerId        String?
+  archivedAt     DateTime?
+
+  @@unique([organizationId, slug])
+  @@index([organizationId, departmentId])
+  @@map("ticket_centers")
+}
+
+model TicketCategory {
+  id             String    @id @default(cuid())
+  organizationId String
+  departmentId   String
+  ticketCenterId String
+  name           String
+  slug           String
+  description    String?
+  defaultPriority RequestPriority @default(NORMAL)
+  active         Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  createdById    String?
+  updatedById    String?
+  ownerId        String?
+  archivedAt     DateTime?
+
+  @@unique([organizationId, ticketCenterId, slug])
+  @@index([organizationId, departmentId])
+  @@map("ticket_categories")
+}
+
+model Ticket {
+  id                           String          @id @default(cuid())
+  organizationId               String
+  ticketNumber                 String
+  departmentId                 String
+  ticketCenterId               String
+  categoryId                   String?
+  title                        String
+  description                  String
+  requestedById                String
+  requestedForId               String?
+  assignedManagerId            String?
+  assignedOwnerId              String?
+  priority                     RequestPriority @default(NORMAL)
+  status                       String          @default("New")
+  dueDate                      DateTime?
+  targetDate                   DateTime?
+  locationId                   String?
+  shiftId                      String?
+  relatedEmployeeId            String?
+  relatedOnboardingCaseId      String?
+  relatedPayrollRequestId      String?
+  relatedEquipmentRequestId    String?
+  relatedTrainingAssignmentId  String?
+  reopenedCount                Int             @default(0)
+  escalationStatus             String?
+  resolutionNotes              String?
+  closedById                   String?
+  closedAt                     DateTime?
+  createdAt                    DateTime        @default(now())
+  updatedAt                    DateTime        @updatedAt
+  createdById                  String?
+  updatedById                  String?
+  ownerId                      String?
+  archivedAt                   DateTime?
+
+  @@unique([organizationId, ticketNumber])
+  @@index([organizationId, departmentId, status])
+  @@index([organizationId, assignedOwnerId])
+  @@index([organizationId, dueDate])
+  @@map("tickets")
+}
+
+model TicketComment {
+  id             String   @id @default(cuid())
+  organizationId String
+  ticketId       String
+  body           String
+  authorId       String
+  visibility     VisibilityLevel @default(VISIBLE_TO_EMPLOYEE)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdById    String?
+  updatedById    String?
+  departmentId   String?
+  ownerId        String?
+  archivedAt     DateTime?
+
+  @@index([organizationId, ticketId])
+  @@map("ticket_comments")
+}
+
+model TicketInternalNote {
+  id             String   @id @default(cuid())
+  organizationId String
+  ticketId       String
+  body           String
+  authorId       String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdById    String?
+  updatedById    String?
+  departmentId   String?
+  ownerId        String?
+  archivedAt     DateTime?
+
+  @@index([organizationId, ticketId])
+  @@map("ticket_internal_notes")
+}
+
+model TicketAttachment {
+  id             String   @id @default(cuid())
+  organizationId String
+  ticketId       String
+  fileMetadataId String
+  uploadedById   String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdById    String?
+  updatedById    String?
+  departmentId   String?
+  ownerId        String?
+  archivedAt     DateTime?
+
+  @@index([organizationId, ticketId])
+  @@map("ticket_attachments")
+}
+
+model TicketStatusHistory {
+  id             String   @id @default(cuid())
+  organizationId String
+  ticketId       String
+  fromStatus     String?
+  toStatus       String
+  changedById    String
+  reason         String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdById    String?
+  updatedById    String?
+  departmentId   String?
+  ownerId        String?
+  archivedAt     DateTime?
+
+  @@index([organizationId, ticketId])
+  @@map("ticket_status_history")
+}
+
+model TicketEscalation {
+  id             String   @id @default(cuid())
+  organizationId String
+  ticketId       String
+  escalatedById  String
+  escalatedToId  String?
+  reason         String
+  status         String   @default("Escalated")
+  resolvedAt     DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdById    String?
+  updatedById    String?
+  departmentId   String?
+  ownerId        String?
+  archivedAt     DateTime?
+
+  @@index([organizationId, ticketId])
+  @@map("ticket_escalations")
+}
+
+model OnboardingCase {
+  id                         String    @id @default(cuid())
+  organizationId             String
+  caseNumber                 String
+  firstName                  String
+  lastName                   String
+  preferredName              String?
+  personalEmail              String?
+  phone                      String?
+  employeeId                 String?
+  onboardingType             String
+  employmentType             EmploymentType
+  departmentId               String
+  jobTitleId                 String?
+  jobTitle                   String?
+  managerId                  String?
+  directorId                 String?
+  startDate                  DateTime
+  shiftId                    String?
+  locationId                 String?
+  workArea                   String?
+  payType                    String?
+  payRateSummary             String?
+  payrollSetupRequired       Boolean   @default(false)
+  timekeepingSetupRequired   Boolean   @default(false)
+  equipmentRequired          Boolean   @default(false)
+  softwareRequired           Boolean   @default(false)
+  workspaceRequired          Boolean   @default(false)
+  badgeKeyRequired           Boolean   @default(false)
+  trainingRequired           Boolean   @default(false)
+  policyAcknowledgmentsRequired Boolean @default(false)
+  uniformPpeRequired         Boolean   @default(false)
+  mentorBuddyId              String?
+  firstDaySchedule           String?
+  lunchMeetingPlan           String?
+  readinessScore             Int       @default(0)
+  status                     String    @default("Draft")
+  notes                      String?
+  createdAt                  DateTime  @default(now())
+  updatedAt                  DateTime  @updatedAt
+  createdById                String?
+  updatedById                String?
+  ownerId                    String?
+  archivedAt                 DateTime?
+
+  @@unique([organizationId, caseNumber])
+  @@index([organizationId, departmentId, status])
+  @@index([organizationId, startDate])
+  @@map("onboarding_cases")
+}
+
+model OnboardingTemplate {
+  id             String   @id @default(cuid())
+  organizationId String
+  name           String
+  onboardingType String
+  departmentId   String?
+  jobTitleId      String?
+  active         Boolean  @default(true)
+  templateData   Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdById    String?
+  updatedById    String?
+  ownerId        String?
+  archivedAt     DateTime?
+
+  @@index([organizationId, departmentId])
+  @@map("onboarding_templates")
+}
+
+model OnboardingChecklist {
+  id             String   @id @default(cuid())
+  organizationId String
+  templateId     String?
+  onboardingCaseId String?
+  departmentId   String?
+  name           String
+  status         String   @default("Active")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdById    String?
+  updatedById    String?
+  ownerId        String?
+  archivedAt     DateTime?
+
+  @@index([organizationId, onboardingCaseId])
+  @@map("onboarding_checklists")
+}
+
+model OnboardingChecklistItem {
+  id             String   @id @default(cuid())
+  organizationId String
+  checklistId    String
+  title          String
+  description    String?
+  departmentId   String?
+  ownerRole      String?
+  dueOffsetDays  Int?
+  required       Boolean  @default(true)
+  sortOrder      Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdById    String?
+  updatedById    String?
+  ownerId        String?
+  status         String   @default("Active")
+  archivedAt     DateTime?
+
+  @@index([organizationId, checklistId])
+  @@map("onboarding_checklist_items")
+}
+
+model OnboardingCaseItem {
+  id             String   @id @default(cuid())
+  organizationId String
+  onboardingCaseId String
+  title          String
+  description    String?
+  departmentId   String?
+  ownerId        String?
+  status         String   @default("Not Started")
+  dueDate        DateTime?
+  completedAt    DateTime?
+  completionNotes String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdById    String?
+  updatedById    String?
+  archivedAt     DateTime?
+
+  @@index([organizationId, onboardingCaseId, status])
+  @@map("onboarding_case_items")
+}
+
+model OnboardingMilestone {
+  id             String   @id @default(cuid())
+  organizationId String
+  onboardingCaseId String
+  milestoneType  String
+  dueDate        DateTime?
+  completedAt    DateTime?
+  ownerId        String?
+  status         String   @default("Pending")
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdById    String?
+  updatedById    String?
+  departmentId   String?
+  archivedAt     DateTime?
+
+  @@index([organizationId, onboardingCaseId])
+  @@map("onboarding_milestones")
+}
+
+model OnboardingComment {
+  id             String   @id @default(cuid())
+  organizationId String
+  onboardingCaseId String
+  body           String
+  authorId       String
+  visibility     VisibilityLevel @default(VISIBLE_TO_DIRECTOR)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdById    String?
+  updatedById    String?
+  departmentId   String?
+  ownerId        String?
+  archivedAt     DateTime?
+
+  @@index([organizationId, onboardingCaseId])
+  @@map("onboarding_comments")
+}
+
+model OnboardingDocument {
+  id             String   @id @default(cuid())
+  organizationId String
+  onboardingCaseId String
+  fileMetadataId String
+  documentType   String
+  acknowledgedAt DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdById    String?
+  updatedById    String?
+  departmentId   String?
+  ownerId        String?
+  status         String   @default("Uploaded")
+  archivedAt     DateTime?
+
+  @@index([organizationId, onboardingCaseId])
+  @@map("onboarding_documents")
+}
+
+model OnboardingStatusHistory {
+  id             String   @id @default(cuid())
+  organizationId String
+  onboardingCaseId String
+  fromStatus     String?
+  toStatus       String
+  changedById    String
+  reason         String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdById    String?
+  updatedById    String?
+  departmentId   String?
+  ownerId        String?
+  archivedAt     DateTime?
+
+  @@index([organizationId, onboardingCaseId])
+  @@map("onboarding_status_history")
+}
+
+model PayrollPeriod {
+  id             String   @id @default(cuid())
+  organizationId String
+  label          String
+  startDate      DateTime
+  endDate        DateTime
+  dueDate        DateTime
+  status         String   @default("Open")
+  readinessScore Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdById    String?
+  updatedById    String?
+  departmentId   String?
+  ownerId        String?
+  archivedAt     DateTime?
+
+  @@index([organizationId, startDate, endDate])
+  @@map("payroll_periods")
+}
+
+model PayrollChangeRequest {
+  id                         String   @id @default(cuid())
+  organizationId             String
+  requestNumber              String
+  employeeProfileId          String?
+  departmentId               String
+  managerId                  String?
+  requestType                String
+  effectiveDate              DateTime?
+  payrollPeriodId            String?
+  currentValueSummary        String?
+  proposedChangeSummary      String
+  businessReason             String
+  managerRecommendation      String?
+  directorApprovalRequired   Boolean  @default(false)
+  payrollAdminReviewRequired Boolean  @default(true)
+  status                     String   @default("Draft")
+  exportStatus               String   @default("Not Exported")
+  notes                      String?
+  createdAt                  DateTime @default(now())
+  updatedAt                  DateTime @updatedAt
+  createdById                String?
+  updatedById                String?
+  ownerId                    String?
+  archivedAt                 DateTime?
+
+  @@unique([organizationId, requestNumber])
+  @@index([organizationId, departmentId, status])
+  @@map("payroll_change_requests")
+}
+
+model PayrollRequestComment {
+  id             String   @id @default(cuid())
+  organizationId String
+  payrollRequestId String
+  body           String
+  authorId       String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdById    String?
+  updatedById    String?
+  departmentId   String?
+  ownerId        String?
+  archivedAt     DateTime?
+
+  @@index([organizationId, payrollRequestId])
+  @@map("payroll_request_comments")
+}
+
+model PayrollRequestStatusHistory {
+  id             String   @id @default(cuid())
+  organizationId String
+  payrollRequestId String
+  fromStatus     String?
+  toStatus       String
+  changedById    String
+  reason         String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdById    String?
+  updatedById    String?
+  departmentId   String?
+  ownerId        String?
+  archivedAt     DateTime?
+
+  @@index([organizationId, payrollRequestId])
+  @@map("payroll_request_status_history")
+}
+
+model PayrollExport {
+  id             String       @id @default(cuid())
+  organizationId String
+  payrollPeriodId String?
+  exportNumber   String
+  format         ExportFormat
+  safeFieldSet   Json?
+  generatedById  String
+  generatedAt    DateTime     @default(now())
+  status         String       @default("Generated")
+  fileMetadataId String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  createdById    String?
+  updatedById    String?
+  departmentId   String?
+  ownerId        String?
+  archivedAt     DateTime?
+
+  @@unique([organizationId, exportNumber])
+  @@map("payroll_exports")
+}
+
+model PayrollPeriodChecklist {
+  id             String   @id @default(cuid())
+  organizationId String
+  payrollPeriodId String
+  name           String
+  status         String   @default("Open")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdById    String?
+  updatedById    String?
+  departmentId   String?
+  ownerId        String?
+  archivedAt     DateTime?
+
+  @@index([organizationId, payrollPeriodId])
+  @@map("payroll_period_checklists")
+}
+
+model PayrollPeriodChecklistItem {
+  id             String   @id @default(cuid())
+  organizationId String
+  payrollPeriodChecklistId String
+  title          String
+  completed      Boolean  @default(false)
+  completedById  String?
+  completedAt    DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdById    String?
+  updatedById    String?
+  departmentId   String?
+  ownerId        String?
+  status         String   @default("Pending")
+  archivedAt     DateTime?
+
+  @@index([organizationId, payrollPeriodChecklistId])
+  @@map("payroll_period_checklist_items")
+}
+
+model TimeOffRequest {
+  id                  String   @id @default(cuid())
+  organizationId      String
+  requestNumber       String
+  employeeProfileId   String
+  departmentId        String
+  managerId           String?
+  timeOffType         String
+  startDate           DateTime
+  endDate             DateTime
+  hoursRequested      Decimal?
+  daysRequested       Decimal?
+  reason              String?
+  coveragePlan        String?
+  managerDecision     String?
+  directorDecision    String?
+  status              String   @default("Draft")
+  payrollNoteRequired Boolean  @default(false)
+  exportedToPayroll   Boolean  @default(false)
+  comments            String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  createdById         String?
+  updatedById         String?
+  ownerId             String?
+  archivedAt          DateTime?
+
+  @@unique([organizationId, requestNumber])
+  @@index([organizationId, departmentId, status])
+  @@index([organizationId, startDate, endDate])
+  @@map("time_off_requests")
+}
+
+model AttendanceIssueRecord {
+  id                String   @id @default(cuid())
+  organizationId    String
+  recordNumber      String
+  employeeProfileId String
+  departmentId      String
+  managerId         String?
+  issueType         String
+  issueDate         DateTime
+  shiftId           String?
+  description       String
+  correctionNeeded  Boolean  @default(false)
+  payrollImpact     Boolean  @default(false)
+  managerReview     String?
+  payrollHandoff    Boolean  @default(false)
+  status            String   @default("Submitted")
+  notes             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  createdById       String?
+  updatedById       String?
+  ownerId           String?
+  archivedAt        DateTime?
+
+  @@unique([organizationId, recordNumber])
+  @@index([organizationId, departmentId, status])
+  @@map("attendance_issue_records")
+}
+
+model ScheduleIssueRecord {
+  id                String   @id @default(cuid())
+  organizationId    String
+  recordNumber      String
+  employeeProfileId String
+  departmentId      String
+  managerId         String?
+  issueType         String
+  issueDate         DateTime
+  shiftId           String?
+  description       String
+  correctionNeeded  Boolean  @default(false)
+  payrollImpact     Boolean  @default(false)
+  status            String   @default("Submitted")
+  notes             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  createdById       String?
+  updatedById       String?
+  ownerId           String?
+  archivedAt        DateTime?
+
+  @@unique([organizationId, recordNumber])
+  @@index([organizationId, departmentId, status])
+  @@map("schedule_issue_records")
+}
+
+model TimeCorrectionRequest {
+  id                String   @id @default(cuid())
+  organizationId    String
+  requestNumber     String
+  employeeProfileId String
+  departmentId      String
+  managerId         String?
+  correctionDate    DateTime
+  currentSummary    String?
+  requestedSummary  String
+  payrollImpact     Boolean  @default(true)
+  status            String   @default("Submitted")
+  notes             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  createdById       String?
+  updatedById       String?
+  ownerId           String?
+  archivedAt        DateTime?
+
+  @@unique([organizationId, requestNumber])
+  @@index([organizationId, departmentId, status])
+  @@map("time_correction_requests")
+}
+
+model EmployeeProfile {
+  id                 String         @id @default(cuid())
+  organizationId     String
+  userId             String?
+  employeeNumber     String?
+  firstName          String
+  lastName           String
+  preferredName      String?
+  workEmail          String?
+  personalEmail      String?
+  phone              String?
+  employmentType     EmploymentType @default(EMPLOYEE)
+  departmentId       String?
+  managerId          String?
+  directorId         String?
+  jobTitleId         String?
+  shiftId            String?
+  locationId         String?
+  startDate          DateTime?
+  status             String         @default("Active")
+  safeProfileSummary String?
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  createdById        String?
+  updatedById        String?
+  ownerId            String?
+  archivedAt         DateTime?
+
+  @@unique([organizationId, employeeNumber])
+  @@index([organizationId, departmentId, status])
+  @@map("employee_profiles")
+}
+
+model EmploymentRecord {
+  id                String   @id @default(cuid())
+  organizationId    String
+  employeeProfileId String
+  departmentId      String?
+  jobTitleId        String?
+  managerId         String?
+  employmentType    EmploymentType
+  startDate         DateTime
+  endDate           DateTime?
+  status            String   @default("Active")
+  notes             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  createdById       String?
+  updatedById       String?
+  ownerId           String?
+  archivedAt        DateTime?
+
+  @@index([organizationId, employeeProfileId])
+  @@map("employment_records")
+}
+
+model LifecycleEvent {
+  id                       String   @id @default(cuid())
+  organizationId           String
+  employeeProfileId        String
+  eventType                String
+  departmentId             String?
+  managerId                String?
+  effectiveDate            DateTime?
+  ownerId                  String?
+  status                   String   @default("Open")
+  relatedTicketIds         Json?
+  relatedPayrollRequestIds Json?
+  relatedOnboardingCaseId  String?
+  notes                    String?
+  visibility               VisibilityLevel @default(VISIBLE_TO_DIRECTOR)
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+  createdById              String?
+  updatedById              String?
+  archivedAt               DateTime?
+
+  @@index([organizationId, employeeProfileId, eventType])
+  @@map("lifecycle_events")
+}
+
+model RoleChangeRequest {
+  id                String   @id @default(cuid())
+  organizationId    String
+  requestNumber     String
+  employeeProfileId String
+  departmentId      String?
+  currentRoleSummary String?
+  proposedRoleSummary String
+  effectiveDate     DateTime?
+  reason            String
+  status            String   @default("Submitted")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  createdById       String?
+  updatedById       String?
+  ownerId           String?
+  archivedAt        DateTime?
+
+  @@unique([organizationId, requestNumber])
+  @@map("role_change_requests")
+}
+
+model TransferRequest {
+  id                String   @id @default(cuid())
+  organizationId    String
+  requestNumber     String
+  employeeProfileId String
+  fromDepartmentId  String?
+  toDepartmentId    String
+  departmentId      String?
+  effectiveDate     DateTime?
+  reason            String
+  status            String   @default("Submitted")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  createdById       String?
+  updatedById       String?
+  ownerId           String?
+  archivedAt        DateTime?
+
+  @@unique([organizationId, requestNumber])
+  @@map("transfer_requests")
+}
+
+model RehireRequest {
+  id                String   @id @default(cuid())
+  organizationId    String
+  requestNumber     String
+  employeeProfileId String?
+  firstName         String
+  lastName          String
+  departmentId      String?
+  proposedStartDate DateTime?
+  managerId         String?
+  reason            String?
+  status            String   @default("Submitted")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  createdById       String?
+  updatedById       String?
+  ownerId           String?
+  archivedAt        DateTime?
+
+  @@unique([organizationId, requestNumber])
+  @@map("rehire_requests")
+}
+
+model ContractorRecord {
+  id                String   @id @default(cuid())
+  organizationId    String
+  employeeProfileId String?
+  departmentId      String?
+  managerId         String?
+  companyName       String?
+  startDate         DateTime?
+  endDate           DateTime?
+  status            String   @default("Active")
+  notes             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  createdById       String?
+  updatedById       String?
+  ownerId           String?
+  archivedAt        DateTime?
+
+  @@index([organizationId, departmentId, status])
+  @@map("contractor_records")
+}
+
+model ContractorExpiration {
+  id                 String   @id @default(cuid())
+  organizationId     String
+  contractorRecordId String
+  employeeProfileId  String?
+  departmentId       String?
+  expirationDate     DateTime
+  reminderDate       DateTime?
+  status             String   @default("Upcoming")
+  ownerId            String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  createdById        String?
+  updatedById        String?
+  archivedAt         DateTime?
+
+  @@index([organizationId, expirationDate, status])
+  @@map("contractor_expirations")
+}
+
+model ProductivityBoard {
+  id             String   @id @default(cuid())
+  organizationId String
+  departmentId   String
+  name           String
+  viewMode       String   @default("hybrid")
+  status         String   @default("Active")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdById    String?
+  updatedById    String?
+  ownerId        String?
+  archivedAt     DateTime?
+
+  @@index([organizationId, departmentId])
+  @@map("productivity_boards")
+}
+
+model ProductivityBoardColumn {
+  id             String   @id @default(cuid())
+  organizationId String
+  productivityBoardId String
+  departmentId   String?
+  name           String
+  statusKey      String
+  sortOrder      Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdById    String?
+  updatedById    String?
+  ownerId        String?
+  archivedAt     DateTime?
+
+  @@index([organizationId, productivityBoardId])
+  @@map("productivity_board_columns")
+}
+
+model ProductivityTask {
+  id                       String          @id @default(cuid())
+  organizationId           String
+  title                    String
+  description              String?
+  ownerId                  String?
+  assignedById             String?
+  departmentId             String
+  priority                 RequestPriority @default(NORMAL)
+  dueDate                  DateTime?
+  status                   String          @default("Not Started")
+  blockerReason            String?
+  linkedEmployeeId         String?
+  linkedOnboardingCaseId   String?
+  linkedTicketId           String?
+  linkedPayrollRequestId   String?
+  linkedMeetingId          String?
+  recurring                Boolean         @default(false)
+  completionNotes          String?
+  attachmentIds            Json?
+  visibility               VisibilityLevel @default(VISIBLE_TO_DIRECTOR)
+  createdAt                DateTime        @default(now())
+  updatedAt                DateTime        @updatedAt
+  createdById              String?
+  updatedById              String?
+  archivedAt               DateTime?
+
+  @@index([organizationId, departmentId, status])
+  @@index([organizationId, ownerId])
+  @@map("productivity_tasks")
+}
+
+model TaskComment {
+  id             String   @id @default(cuid())
+  organizationId String
+  productivityTaskId String
+  body           String
+  authorId       String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdById    String?
+  updatedById    String?
+  departmentId   String?
+  ownerId        String?
+  archivedAt     DateTime?
+
+  @@index([organizationId, productivityTaskId])
+  @@map("task_comments")
+}
+
+model RecurringTask {
+  id             String   @id @default(cuid())
+  organizationId String
+  departmentId   String?
+  title          String
+  description    String?
+  ownerRole      String?
+  frequency      String
+  dueTime        String?
+  nextDueAt      DateTime?
+  active         Boolean  @default(true)
+  status         String   @default("Active")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdById    String?
+  updatedById    String?
+  ownerId        String?
+  archivedAt     DateTime?
+
+  @@index([organizationId, departmentId, active])
+  @@map("recurring_tasks")
+}
+
+model RecurringChecklist {
+  id                    String   @id @default(cuid())
+  organizationId        String
+  departmentId          String?
+  checklistName         String
+  ownerRole             String?
+  frequency             String
+  dueTime               String?
+  requiredEvidence      Boolean  @default(false)
+  escalationRule        String?
+  missedChecklistBehavior String?
+  active                Boolean  @default(true)
+  status                String   @default("Active")
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  createdById           String?
+  updatedById           String?
+  ownerId               String?
+  archivedAt            DateTime?
+
+  @@index([organizationId, departmentId, active])
+  @@map("recurring_checklists")
+}
+
+model RecurringChecklistItem {
+  id                   String   @id @default(cuid())
+  organizationId       String
+  recurringChecklistId String
+  title                String
+  description          String?
+  required             Boolean  @default(true)
+  sortOrder            Int      @default(0)
+  status               String   @default("Active")
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  createdById          String?
+  updatedById          String?
+  departmentId         String?
+  ownerId              String?
+  archivedAt           DateTime?
+
+  @@index([organizationId, recurringChecklistId])
+  @@map("recurring_checklist_items")
+}
+
+model ChecklistCompletion {
+  id                   String   @id @default(cuid())
+  organizationId       String
+  recurringChecklistId String
+  departmentId         String?
+  completedById        String
+  completedAt          DateTime @default(now())
+  dueAt                DateTime?
+  evidenceFileIds      Json?
+  completionNotes      String?
+  status               String   @default("Complete")
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  createdById          String?
+  updatedById          String?
+  ownerId              String?
+  archivedAt           DateTime?
+
+  @@index([organizationId, recurringChecklistId, completedAt])
+  @@map("checklist_completions")
+}
+
+model FollowUp {
+  id                     String   @id @default(cuid())
+  organizationId         String
+  title                  String
+  description            String?
+  employeeProfileId      String?
+  departmentId           String?
+  ownerId                String?
+  dueDate                DateTime?
+  status                 String   @default("Open")
+  relatedTicketId        String?
+  relatedOnboardingCaseId String?
+  relatedPayrollRequestId String?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+  createdById            String?
+  updatedById            String?
+  archivedAt             DateTime?
+
+  @@index([organizationId, ownerId, status])
+  @@map("follow_ups")
+}
+
+model Blocker {
+  id             String          @id @default(cuid())
+  organizationId String
+  title          String
+  description    String?
+  departmentId   String?
+  ownerId        String?
+  priority       RequestPriority @default(HIGH)
+  status         String          @default("Open")
+  linkedTicketId String?
+  linkedTaskId   String?
+  linkedOnboardingCaseId String?
+  escalationId   String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  createdById    String?
+  updatedById    String?
+  archivedAt     DateTime?
+
+  @@index([organizationId, departmentId, status])
+  @@map("blockers")
+}
+
+model Escalation {
+  id             String   @id @default(cuid())
+  organizationId String
+  title          String
+  sourceType     String
+  sourceId       String
+  departmentId   String?
+  ownerId        String?
+  escalatedById  String
+  escalatedToId  String?
+  status         String   @default("Open")
+  reason         String
+  resolvedAt     DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdById    String?
+  updatedById    String?
+  archivedAt     DateTime?
+
+  @@index([organizationId, status])
+  @@map("escalations")
+}
+
+model DepartmentGoal {
+  id             String   @id @default(cuid())
+  organizationId String
+  departmentId   String
+  title          String
+  description    String?
+  ownerId        String?
+  targetDate     DateTime?
+  status         String   @default("Active")
+  score          Int?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdById    String?
+  updatedById    String?
+  archivedAt     DateTime?
+
+  @@index([organizationId, departmentId, status])
+  @@map("department_goals")
+}
+
+model Commitment {
+  id             String   @id @default(cuid())
+  organizationId String
+  departmentId   String?
+  ownerId        String?
+  title          String
+  dueDate        DateTime?
+  status         String   @default("Open")
+  linkedMeetingId String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdById    String?
+  updatedById    String?
+  archivedAt     DateTime?
+
+  @@index([organizationId, ownerId, status])
+  @@map("commitments")
+}
+
+model ManagerNote {
+  id                    String          @id @default(cuid())
+  organizationId        String
+  employeeProfileId     String?
+  managerId             String
+  noteType              String
+  title                 String
+  noteBody              String
+  visibility            VisibilityLevel @default(PRIVATE_TO_MANAGER)
+  followUpRequired      Boolean         @default(false)
+  followUpDate          DateTime?
+  linkedTaskId          String?
+  linkedTicketId        String?
+  linkedOnboardingCaseId String?
+  attachmentIds         Json?
+  departmentId          String?
+  ownerId               String?
+  status                String          @default("Open")
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+  createdById           String?
+  updatedById           String?
+  archivedAt            DateTime?
+
+  @@index([organizationId, managerId, visibility])
+  @@map("manager_notes")
+}
+
+model OneOnOneNote {
+  id                String          @id @default(cuid())
+  organizationId    String
+  employeeProfileId String
+  managerId         String
+  meetingDate       DateTime
+  summary           String
+  actionItems       Json?
+  visibility        VisibilityLevel @default(VISIBLE_TO_DIRECTOR)
+  status            String          @default("Open")
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  createdById       String?
+  updatedById       String?
+  departmentId      String?
+  ownerId           String?
+  archivedAt        DateTime?
+
+  @@index([organizationId, employeeProfileId, meetingDate])
+  @@map("one_on_one_notes")
+}
+
+model MeetingNote {
+  id             String   @id @default(cuid())
+  organizationId String
+  departmentId   String?
+  title          String
+  meetingDate    DateTime
+  summary        String?
+  attendees      Json?
+  ownerId        String?
+  status         String   @default("Open")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdById    String?
+  updatedById    String?
+  archivedAt     DateTime?
+
+  @@index([organizationId, departmentId, meetingDate])
+  @@map("meeting_notes")
+}
+
+model MeetingActionItem {
+  id             String   @id @default(cuid())
+  organizationId String
+  meetingNoteId  String
+  title          String
+  ownerId        String?
+  dueDate        DateTime?
+  status         String   @default("Open")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdById    String?
+  updatedById    String?
+  departmentId   String?
+  archivedAt     DateTime?
+
+  @@index([organizationId, meetingNoteId])
+  @@map("meeting_action_items")
+}
+
+model Announcement {
+  id             String   @id @default(cuid())
+  organizationId String
+  departmentId   String?
+  title          String
+  body           String
+  audience       String
+  publishedAt    DateTime?
+  expiresAt      DateTime?
+  status         String   @default("Draft")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdById    String?
+  updatedById    String?
+  ownerId        String?
+  archivedAt     DateTime?
+
+  @@index([organizationId, status, publishedAt])
+  @@map("announcements")
+}
+
+model EquipmentRequest {
+  id             String          @id @default(cuid())
+  organizationId String
+  requestNumber  String
+  departmentId   String
+  requestedById  String
+  requestedForId String?
+  title          String
+  description    String?
+  priority       RequestPriority @default(NORMAL)
+  status         String          @default("Submitted")
+  dueDate        DateTime?
+  ownerId        String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  createdById    String?
+  updatedById    String?
+  archivedAt     DateTime?
+
+  @@unique([organizationId, requestNumber])
+  @@map("equipment_requests")
+}
+
+model SupplyRequest {
+  id             String          @id @default(cuid())
+  organizationId String
+  requestNumber  String
+  departmentId   String
+  requestedById  String
+  title          String
+  description    String?
+  priority       RequestPriority @default(NORMAL)
+  status         String          @default("Submitted")
+  dueDate        DateTime?
+  ownerId        String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  createdById    String?
+  updatedById    String?
+  archivedAt     DateTime?
+
+  @@unique([organizationId, requestNumber])
+  @@map("supply_requests")
+}
+
+model SoftwareCoordinationRequest {
+  id             String          @id @default(cuid())
+  organizationId String
+  requestNumber  String
+  departmentId   String
+  requestedById  String
+  requestedForId String?
+  softwareName   String
+  businessReason String
+  priority       RequestPriority @default(NORMAL)
+  status         String          @default("Submitted")
+  ownerId        String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  createdById    String?
+  updatedById    String?
+  archivedAt     DateTime?
+
+  @@unique([organizationId, requestNumber])
+  @@map("software_coordination_requests")
+}
+
+model WorkspaceRequest {
+  id             String          @id @default(cuid())
+  organizationId String
+  requestNumber  String
+  departmentId   String
+  requestedById  String
+  requestedForId String?
+  locationId     String?
+  workArea       String?
+  description    String?
+  priority       RequestPriority @default(NORMAL)
+  status         String          @default("Submitted")
+  ownerId        String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  createdById    String?
+  updatedById    String?
+  archivedAt     DateTime?
+
+  @@unique([organizationId, requestNumber])
+  @@map("workspace_requests")
+}
+
+model BadgeKeyRequest {
+  id             String          @id @default(cuid())
+  organizationId String
+  requestNumber  String
+  departmentId   String
+  requestedById  String
+  requestedForId String?
+  locationId     String?
+  accessSummary  String
+  priority       RequestPriority @default(NORMAL)
+  status         String          @default("Submitted")
+  ownerId        String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  createdById    String?
+  updatedById    String?
+  archivedAt     DateTime?
+
+  @@unique([organizationId, requestNumber])
+  @@map("badge_key_requests")
+}
+
+model TrainingAssignment {
+  id                String   @id @default(cuid())
+  organizationId    String
+  assignmentNumber  String
+  employeeProfileId String
+  departmentId      String?
+  trainingName      String
+  assignedById      String
+  dueDate           DateTime?
+  completedAt       DateTime?
+  status            String   @default("Assigned")
+  notes             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  createdById       String?
+  updatedById       String?
+  ownerId           String?
+  archivedAt        DateTime?
+
+  @@unique([organizationId, assignmentNumber])
+  @@index([organizationId, employeeProfileId, status])
+  @@map("training_assignments")
+}
+
+model PolicyAcknowledgment {
+  id                String   @id @default(cuid())
+  organizationId    String
+  policyName        String
+  employeeProfileId String
+  departmentId      String?
+  assignedById      String
+  acknowledgedAt    DateTime?
+  dueDate           DateTime?
+  status            String   @default("Assigned")
+  fileMetadataId    String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  createdById       String?
+  updatedById       String?
+  ownerId           String?
+  archivedAt        DateTime?
+
+  @@index([organizationId, employeeProfileId, status])
+  @@map("policy_acknowledgments")
+}
+
+model ApprovalRequest {
+  id             String          @id @default(cuid())
+  organizationId String
+  requestNumber  String
+  approvalType   String
+  sourceType     String
+  sourceId       String
+  departmentId   String?
+  requesterId    String
+  ownerId        String?
+  priority       RequestPriority @default(NORMAL)
+  status         String          @default("Pending")
+  dueDate        DateTime?
+  summary        String
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  createdById    String?
+  updatedById    String?
+  archivedAt     DateTime?
+
+  @@unique([organizationId, requestNumber])
+  @@index([organizationId, status])
+  @@map("approval_requests")
+}
+
+model ApprovalStep {
+  id                String   @id @default(cuid())
+  organizationId    String
+  approvalRequestId String
+  stepOrder         Int
+  approverRole      String?
+  approverId        String?
+  status            String   @default("Pending")
+  decisionId        String?
+  dueDate           DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  createdById       String?
+  updatedById       String?
+  departmentId      String?
+  ownerId           String?
+  archivedAt        DateTime?
+
+  @@index([organizationId, approvalRequestId, stepOrder])
+  @@map("approval_steps")
+}
+
+model ApprovalDecision {
+  id                String   @id @default(cuid())
+  organizationId    String
+  approvalRequestId String
+  approvalStepId    String?
+  decidedById       String
+  decision          String
+  reason            String?
+  decidedAt         DateTime @default(now())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  createdById       String?
+  updatedById       String?
+  departmentId      String?
+  ownerId           String?
+  archivedAt        DateTime?
+
+  @@index([organizationId, approvalRequestId])
+  @@map("approval_decisions")
+}
+
+model ApprovalRule {
+  id             String   @id @default(cuid())
+  organizationId String
+  name           String
+  approvalType   String
+  departmentId   String?
+  conditions     Json?
+  steps          Json?
+  active         Boolean  @default(true)
+  status         String   @default("Active")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdById    String?
+  updatedById    String?
+  ownerId        String?
+  archivedAt     DateTime?
+
+  @@index([organizationId, approvalType, active])
+  @@map("approval_rules")
+}
+
+model ApprovalEscalation {
+  id                String   @id @default(cuid())
+  organizationId    String
+  approvalRequestId String
+  escalatedById     String
+  escalatedToId     String?
+  reason            String
+  status            String   @default("Escalated")
+  resolvedAt        DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  createdById       String?
+  updatedById       String?
+  departmentId      String?
+  ownerId           String?
+  archivedAt        DateTime?
+
+  @@index([organizationId, approvalRequestId])
+  @@map("approval_escalations")
+}
+
+model Report {
+  id             String       @id @default(cuid())
+  organizationId String
+  reportNumber   String
+  reportType     String
+  title          String
+  generatedById  String
+  generatedAt    DateTime     @default(now())
+  departmentId   String?
+  dateRangeStart DateTime?
+  dateRangeEnd   DateTime?
+  filtersUsed    Json?
+  summaryMetrics Json?
+  detailRows     Json?
+  status         String       @default("Generated")
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  createdById    String?
+  updatedById    String?
+  ownerId        String?
+  archivedAt     DateTime?
+
+  @@unique([organizationId, reportNumber])
+  @@index([organizationId, reportType, generatedAt])
+  @@map("reports")
+}
+
+model ReportExport {
+  id             String       @id @default(cuid())
+  organizationId String
+  reportId       String
+  format         ExportFormat
+  fileMetadataId String?
+  exportedById   String
+  exportedAt     DateTime     @default(now())
+  status         String       @default("Exported")
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  createdById    String?
+  updatedById    String?
+  departmentId   String?
+  ownerId        String?
+  archivedAt     DateTime?
+
+  @@index([organizationId, reportId])
+  @@map("report_exports")
+}
+
+model ReportTemplate {
+  id             String   @id @default(cuid())
+  organizationId String
+  reportType     String
+  title          String
+  description    String?
+  defaultFormat  ExportFormat @default(PDF)
+  templateData   Json?
+  active         Boolean  @default(true)
+  status         String   @default("Active")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdById    String?
+  updatedById    String?
+  departmentId   String?
+  ownerId        String?
+  archivedAt     DateTime?
+
+  @@unique([organizationId, reportType])
+  @@map("report_templates")
+}
+
+model Notification {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String
+  title          String
+  body           String
+  channel        String   @default("in_app")
+  readAt         DateTime?
+  status         String   @default("Unread")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdById    String?
+  updatedById    String?
+  departmentId   String?
+  ownerId        String?
+  archivedAt     DateTime?
+
+  @@index([organizationId, userId, status])
+  @@map("notifications")
+}
+
+model Setting {
+  id             String   @id @default(cuid())
+  organizationId String
+  key            String
+  value          Json?
+  description    String?
+  status         String   @default("Active")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdById    String?
+  updatedById    String?
+  departmentId   String?
+  ownerId        String?
+  archivedAt     DateTime?
+
+  @@unique([organizationId, key])
+  @@map("settings")
+}
+
+model FileMetadata {
+  id             String   @id @default(cuid())
+  organizationId String
+  originalName   String
+  storageKey     String
+  mimeType       String
+  sizeBytes      Int
+  checksum       String?
+  uploadedById   String
+  safeUse        String
+  status         String   @default("Uploaded")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdById    String?
+  updatedById    String?
+  departmentId   String?
+  ownerId        String?
+  archivedAt     DateTime?
+
+  @@index([organizationId, uploadedById])
+  @@map("file_metadata")
+}
+
+model AuditLog {
+  id             String   @id @default(cuid())
+  organizationId String
+  actorId        String?
+  action         String
+  entityType     String
+  entityId       String?
+  departmentId   String?
+  ownerId        String?
+  outcome        String   @default("SUCCESS")
+  reason         String?
+  ipAddress      String?
+  userAgent      String?
+  before         Json?
+  after          Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdById    String?
+  updatedById    String?
+  archivedAt     DateTime?
+
+  @@index([organizationId, entityType, entityId])
+  @@index([organizationId, actorId, createdAt])
+  @@map("audit_log")
+}
+
+model ImportJob {
+  id             String   @id @default(cuid())
+  organizationId String
+  importType     String
+  sourceName     String
+  status         String   @default("Queued")
+  startedAt      DateTime?
+  completedAt    DateTime?
+  summary        Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdById    String?
+  updatedById    String?
+  departmentId   String?
+  ownerId        String?
+  archivedAt     DateTime?
+
+  @@index([organizationId, status])
+  @@map("import_jobs")
+}
+
+model ImportRow {
+  id             String   @id @default(cuid())
+  organizationId String
+  importJobId    String
+  rowNumber      Int
+  rawData        Json
+  normalizedData Json?
+  status         String   @default("Pending")
+  errorMessage   String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdById    String?
+  updatedById    String?
+  departmentId   String?
+  ownerId        String?
+  archivedAt     DateTime?
+
+  @@index([organizationId, importJobId, status])
+  @@map("import_rows")
+}
