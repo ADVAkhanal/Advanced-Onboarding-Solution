@@ -2005,6 +2005,481 @@ model ReportTemplate {
   @@map("report_templates")
 }
 
+model CustomerAccount {
+  id                 String    @id @default(cuid())
+  organizationId     String
+  accountNumber      String
+  name               String
+  primaryContactName String?
+  primaryEmail       String?
+  primaryPhone       String?
+  billingCity        String?
+  billingState       String?
+  shippingCity       String?
+  shippingState      String?
+  ownerId            String?
+  status             String    @default("ACTIVE")
+  notes              String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  createdById        String?
+  updatedById        String?
+  departmentId       String?
+  archivedAt         DateTime?
+
+  @@unique([organizationId, accountNumber])
+  @@index([organizationId, status])
+  @@map("customer_accounts")
+}
+
+model VendorAccount {
+  id                 String    @id @default(cuid())
+  organizationId     String
+  vendorNumber       String
+  name               String
+  primaryContactName String?
+  primaryEmail       String?
+  primaryPhone       String?
+  city               String?
+  state              String?
+  ownerId            String?
+  status             String    @default("ACTIVE")
+  notes              String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  createdById        String?
+  updatedById        String?
+  departmentId       String?
+  archivedAt         DateTime?
+
+  @@unique([organizationId, vendorNumber])
+  @@index([organizationId, status])
+  @@map("vendor_accounts")
+}
+
+model Part {
+  id             String    @id @default(cuid())
+  organizationId String
+  partNumber     String
+  revision       String    @default("A")
+  description    String
+  customerId     String?
+  unitOfMeasure  String    @default("EA")
+  makeBuy        String    @default("MAKE")
+  status         String    @default("ACTIVE")
+  notes          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  createdById    String?
+  updatedById    String?
+  departmentId   String?
+  ownerId        String?
+  archivedAt     DateTime?
+
+  @@unique([organizationId, partNumber, revision])
+  @@index([organizationId, customerId])
+  @@map("parts")
+}
+
+model Quote {
+  id             String          @id @default(cuid())
+  organizationId String
+  quoteNumber    String
+  customerId     String?
+  title          String
+  status         String          @default("DRAFT")
+  priority       RequestPriority @default(NORMAL)
+  dueDate        DateTime?
+  estimatedValue Decimal?        @db.Decimal(12, 2)
+  marginTarget   Decimal?        @db.Decimal(5, 2)
+  validUntil     DateTime?
+  ownerId        String?
+  notes          String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  createdById    String?
+  updatedById    String?
+  departmentId   String?
+  archivedAt     DateTime?
+
+  @@unique([organizationId, quoteNumber])
+  @@index([organizationId, status, dueDate])
+  @@map("quotes")
+}
+
+model QuoteLine {
+  id             String   @id @default(cuid())
+  organizationId String
+  quoteId        String
+  partId         String?
+  description    String
+  quantity       Decimal  @default(1) @db.Decimal(12, 2)
+  unitPrice      Decimal? @db.Decimal(12, 2)
+  estimatedHours Decimal? @db.Decimal(12, 2)
+  status         String   @default("OPEN")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdById    String?
+  updatedById    String?
+  departmentId   String?
+  ownerId        String?
+  archivedAt     DateTime?
+
+  @@index([organizationId, quoteId])
+  @@map("quote_lines")
+}
+
+model SalesOrder {
+  id               String    @id @default(cuid())
+  organizationId   String
+  orderNumber      String
+  customerId       String?
+  quoteId          String?
+  customerPoNumber String?
+  promisedDate     DateTime?
+  status           String    @default("OPEN")
+  priority         RequestPriority @default(NORMAL)
+  ownerId          String?
+  notes            String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  createdById      String?
+  updatedById      String?
+  departmentId     String?
+  archivedAt       DateTime?
+
+  @@unique([organizationId, orderNumber])
+  @@index([organizationId, status, promisedDate])
+  @@map("sales_orders")
+}
+
+model WorkOrder {
+  id               String          @id @default(cuid())
+  organizationId   String
+  workOrderNumber  String
+  salesOrderId     String?
+  customerId       String?
+  partId           String?
+  departmentId     String?
+  title            String
+  quantity         Decimal         @default(1) @db.Decimal(12, 2)
+  releasedQuantity Decimal?        @db.Decimal(12, 2)
+  dueDate          DateTime?
+  priority         RequestPriority @default(NORMAL)
+  status           String          @default("PLANNED")
+  routerStatus     String          @default("NOT_RELEASED")
+  materialStatus   String          @default("NOT_ALLOCATED")
+  qualityStatus    String          @default("NOT_STARTED")
+  shippingStatus   String          @default("NOT_READY")
+  ownerId          String?
+  notes            String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  createdById      String?
+  updatedById      String?
+  archivedAt       DateTime?
+
+  @@unique([organizationId, workOrderNumber])
+  @@index([organizationId, departmentId, status])
+  @@index([organizationId, dueDate])
+  @@map("work_orders")
+}
+
+model WorkOrderOperation {
+  id               String    @id @default(cuid())
+  organizationId   String
+  workOrderId      String
+  operationNumber  Int
+  workCenter       String
+  description      String
+  setupHours       Decimal?  @db.Decimal(12, 2)
+  runHours         Decimal?  @db.Decimal(12, 2)
+  status           String    @default("QUEUED")
+  scheduledStart   DateTime?
+  scheduledEnd     DateTime?
+  assignedToId     String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  createdById      String?
+  updatedById      String?
+  departmentId     String?
+  ownerId          String?
+  archivedAt       DateTime?
+
+  @@unique([organizationId, workOrderId, operationNumber])
+  @@index([organizationId, workCenter, status])
+  @@map("work_order_operations")
+}
+
+model ShopScheduleItem {
+  id             String    @id @default(cuid())
+  organizationId String
+  workOrderId    String?
+  operationId    String?
+  workCenter     String
+  scheduleDate   DateTime
+  startTime      DateTime?
+  endTime        DateTime?
+  status         String    @default("SCHEDULED")
+  priority       RequestPriority @default(NORMAL)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  createdById    String?
+  updatedById    String?
+  departmentId   String?
+  ownerId        String?
+  archivedAt     DateTime?
+
+  @@index([organizationId, scheduleDate, workCenter])
+  @@map("shop_schedule_items")
+}
+
+model InventoryItem {
+  id                String    @id @default(cuid())
+  organizationId    String
+  itemNumber        String
+  partId            String?
+  description       String
+  itemType          String    @default("MATERIAL")
+  unitOfMeasure     String    @default("EA")
+  quantityOnHand    Decimal   @default(0) @db.Decimal(12, 2)
+  quantityAllocated Decimal   @default(0) @db.Decimal(12, 2)
+  reorderPoint      Decimal?  @db.Decimal(12, 2)
+  locationCode      String?
+  status            String    @default("ACTIVE")
+  notes             String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  createdById       String?
+  updatedById       String?
+  departmentId      String?
+  ownerId           String?
+  archivedAt        DateTime?
+
+  @@unique([organizationId, itemNumber])
+  @@index([organizationId, status, locationCode])
+  @@map("inventory_items")
+}
+
+model InventoryTransaction {
+  id              String   @id @default(cuid())
+  organizationId  String
+  inventoryItemId String
+  transactionType String
+  quantity        Decimal  @db.Decimal(12, 2)
+  sourceType      String?
+  sourceId        String?
+  notes           String?
+  status          String   @default("POSTED")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  createdById     String?
+  updatedById     String?
+  departmentId    String?
+  ownerId         String?
+  archivedAt      DateTime?
+
+  @@index([organizationId, inventoryItemId, createdAt])
+  @@map("inventory_transactions")
+}
+
+model PurchaseOrder {
+  id             String    @id @default(cuid())
+  organizationId String
+  poNumber       String
+  vendorId       String?
+  orderDate      DateTime  @default(now())
+  expectedDate   DateTime?
+  buyerId        String?
+  totalAmount    Decimal?  @db.Decimal(12, 2)
+  status         String    @default("DRAFT")
+  priority       RequestPriority @default(NORMAL)
+  notes          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  createdById    String?
+  updatedById    String?
+  departmentId   String?
+  ownerId        String?
+  archivedAt     DateTime?
+
+  @@unique([organizationId, poNumber])
+  @@index([organizationId, status, expectedDate])
+  @@map("purchase_orders")
+}
+
+model PurchaseOrderLine {
+  id              String    @id @default(cuid())
+  organizationId  String
+  purchaseOrderId String
+  inventoryItemId String?
+  description     String
+  quantity        Decimal   @default(1) @db.Decimal(12, 2)
+  unitCost        Decimal?  @db.Decimal(12, 2)
+  dueDate         DateTime?
+  status          String    @default("OPEN")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  createdById     String?
+  updatedById     String?
+  departmentId    String?
+  ownerId         String?
+  archivedAt      DateTime?
+
+  @@index([organizationId, purchaseOrderId])
+  @@map("purchase_order_lines")
+}
+
+model Receipt {
+  id              String    @id @default(cuid())
+  organizationId  String
+  receiptNumber   String
+  purchaseOrderId String?
+  vendorId        String?
+  receivedDate    DateTime  @default(now())
+  status          String    @default("RECEIVED")
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  createdById     String?
+  updatedById     String?
+  departmentId    String?
+  ownerId         String?
+  archivedAt      DateTime?
+
+  @@unique([organizationId, receiptNumber])
+  @@index([organizationId, status, receivedDate])
+  @@map("receipts")
+}
+
+model Shipment {
+  id             String    @id @default(cuid())
+  organizationId String
+  shipmentNumber String
+  customerId     String?
+  salesOrderId   String?
+  workOrderId    String?
+  carrierName    String?
+  trackingNumber String?
+  shipDate       DateTime?
+  status         String    @default("PLANNED")
+  priority       RequestPriority @default(NORMAL)
+  notes          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  createdById    String?
+  updatedById    String?
+  departmentId   String?
+  ownerId        String?
+  archivedAt     DateTime?
+
+  @@unique([organizationId, shipmentNumber])
+  @@index([organizationId, status, shipDate])
+  @@map("shipments")
+}
+
+model QualityInspection {
+  id               String    @id @default(cuid())
+  organizationId   String
+  inspectionNumber String
+  workOrderId      String?
+  partId           String?
+  inspectionType   String
+  result           String?
+  inspectorId      String?
+  dueDate          DateTime?
+  completedAt      DateTime?
+  status           String    @default("PENDING")
+  priority         RequestPriority @default(NORMAL)
+  notes            String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  createdById      String?
+  updatedById      String?
+  departmentId     String?
+  ownerId          String?
+  archivedAt       DateTime?
+
+  @@unique([organizationId, inspectionNumber])
+  @@index([organizationId, status, dueDate])
+  @@map("quality_inspections")
+}
+
+model NonconformanceRecord {
+  id             String    @id @default(cuid())
+  organizationId String
+  ncrNumber      String
+  workOrderId    String?
+  partId         String?
+  title          String
+  severity       String    @default("MEDIUM")
+  disposition    String?
+  status         String    @default("OPEN")
+  priority       RequestPriority @default(HIGH)
+  notes          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  createdById    String?
+  updatedById    String?
+  departmentId   String?
+  ownerId        String?
+  archivedAt     DateTime?
+
+  @@unique([organizationId, ncrNumber])
+  @@index([organizationId, status, severity])
+  @@map("nonconformance_records")
+}
+
+model DocumentRecord {
+  id             String    @id @default(cuid())
+  organizationId String
+  documentNumber String
+  title          String
+  documentType   String
+  revision       String?
+  relatedType    String?
+  relatedId      String?
+  visibility     VisibilityLevel @default(VISIBLE_TO_HR_ADMIN)
+  fileMetadataId String?
+  status         String    @default("ACTIVE")
+  notes          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  createdById    String?
+  updatedById    String?
+  departmentId   String?
+  ownerId        String?
+  archivedAt     DateTime?
+
+  @@unique([organizationId, documentNumber])
+  @@index([organizationId, relatedType, relatedId])
+  @@map("document_records")
+}
+
+model TimeEntry {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String
+  workOrderId    String?
+  operationId    String?
+  entryDate      DateTime
+  hours          Decimal  @db.Decimal(12, 2)
+  entryType      String   @default("SHOP_FLOOR")
+  status         String   @default("SUBMITTED")
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdById    String?
+  updatedById    String?
+  departmentId   String?
+  ownerId        String?
+  archivedAt     DateTime?
+
+  @@index([organizationId, userId, entryDate])
+  @@index([organizationId, workOrderId])
+  @@map("time_entries")
+}
+
 model Notification {
   id             String   @id @default(cuid())
   organizationId String

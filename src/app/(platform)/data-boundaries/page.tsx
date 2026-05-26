@@ -8,10 +8,11 @@ export default function DataBoundariesPage() {
     "full SSNs, tax credentials, or payroll processor passwords",
     "medical records or PHI",
     "API keys, production secrets, passwords, or cybersecurity secrets",
-    "formal CMMC, SSP, POA&M, PCI, or compliance evidence packets"
+    "formal CMMC, SSP, POA&M, PCI, certification, or compliance evidence packets"
   ];
 
   const allowed = [
+    "customer, vendor, quote, order, job, part, schedule, inventory, purchasing, receiving, shipping, and quality coordination metadata",
     "department tickets and operational requests",
     "onboarding cases using safe profile fields",
     "payroll coordination requests without banking, tax, or SSN fields",
@@ -26,7 +27,7 @@ export default function DataBoundariesPage() {
         <div>
           <p className="eyebrow">Data Boundaries</p>
           <h1>Safe-use rules for CleanOps</h1>
-          <p className="subhead">CleanOps is an internal operations command center. It is enclave-compatible by design, but it is not an enclave provider and does not claim regulated-data compliance.</p>
+          <p className="subhead">CleanOps is an internal shop ERP and operations command center. It is enclave-compatible by design, but it is not an enclave provider and does not claim regulated-data compliance or guaranteed certifications.</p>
         </div>
       </div>
 

@@ -1,7 +1,12 @@
 import { z } from "zod";
 
 const optionalText = z.string().trim().min(1).max(5000).optional();
+const optionalShortText = z.string().trim().min(1).max(255).optional();
 const id = z.string().trim().min(1);
+const optionalId = z.string().trim().min(1).optional();
+const optionalDate = z.string().datetime().optional();
+const optionalMoney = z.coerce.number().nonnegative().max(999_999_999).optional();
+const optionalQuantity = z.coerce.number().nonnegative().max(999_999_999).optional();
 
 export const loginSchema = z.object({
   email: z.string().email().transform((value) => value.toLowerCase()),
@@ -148,6 +153,223 @@ export const reportCreateSchema = z.object({
   dateRangeEnd: z.string().datetime().optional(),
   filtersUsed: z.record(z.unknown()).optional(),
   format: z.enum(["PDF", "DOCX", "XLSX", "CSV", "MARKDOWN", "HTML", "JSON"]).optional()
+});
+
+export const erpCustomerCreateSchema = z.object({
+  accountNumber: z.string().trim().min(1).max(60).optional(),
+  name: z.string().trim().min(2).max(180),
+  primaryContactName: optionalShortText,
+  primaryEmail: z.string().email().optional(),
+  primaryPhone: optionalShortText,
+  billingCity: optionalShortText,
+  billingState: optionalShortText,
+  shippingCity: optionalShortText,
+  shippingState: optionalShortText,
+  ownerId: optionalId,
+  status: z.string().trim().min(1).max(60).default("ACTIVE"),
+  notes: optionalText
+});
+
+export const erpVendorCreateSchema = z.object({
+  vendorNumber: z.string().trim().min(1).max(60).optional(),
+  name: z.string().trim().min(2).max(180),
+  primaryContactName: optionalShortText,
+  primaryEmail: z.string().email().optional(),
+  primaryPhone: optionalShortText,
+  city: optionalShortText,
+  state: optionalShortText,
+  ownerId: optionalId,
+  status: z.string().trim().min(1).max(60).default("ACTIVE"),
+  notes: optionalText
+});
+
+export const erpPartCreateSchema = z.object({
+  partNumber: z.string().trim().min(1).max(100),
+  revision: z.string().trim().min(1).max(30).default("A"),
+  description: z.string().trim().min(2).max(500),
+  customerId: optionalId,
+  unitOfMeasure: z.string().trim().min(1).max(40).default("EA"),
+  makeBuy: z.enum(["MAKE", "BUY", "MAKE_BUY"]).default("MAKE"),
+  status: z.string().trim().min(1).max(60).default("ACTIVE"),
+  notes: optionalText
+});
+
+export const erpQuoteCreateSchema = z.object({
+  quoteNumber: z.string().trim().min(1).max(60).optional(),
+  customerId: optionalId,
+  title: z.string().trim().min(3).max(180),
+  priority: z.enum(["LOW", "NORMAL", "HIGH", "URGENT", "WORK_STOPPAGE"]).default("NORMAL"),
+  status: z.string().trim().min(1).max(60).default("DRAFT"),
+  dueDate: optionalDate,
+  estimatedValue: optionalMoney,
+  marginTarget: optionalMoney,
+  validUntil: optionalDate,
+  ownerId: optionalId,
+  notes: optionalText
+});
+
+export const erpSalesOrderCreateSchema = z.object({
+  orderNumber: z.string().trim().min(1).max(60).optional(),
+  customerId: optionalId,
+  quoteId: optionalId,
+  customerPoNumber: optionalShortText,
+  promisedDate: optionalDate,
+  priority: z.enum(["LOW", "NORMAL", "HIGH", "URGENT", "WORK_STOPPAGE"]).default("NORMAL"),
+  status: z.string().trim().min(1).max(60).default("OPEN"),
+  ownerId: optionalId,
+  notes: optionalText
+});
+
+export const erpWorkOrderCreateSchema = z.object({
+  workOrderNumber: z.string().trim().min(1).max(60).optional(),
+  salesOrderId: optionalId,
+  customerId: optionalId,
+  partId: optionalId,
+  departmentId: optionalId,
+  title: z.string().trim().min(3).max(180),
+  quantity: z.coerce.number().positive().max(999_999_999).default(1),
+  releasedQuantity: optionalQuantity,
+  dueDate: optionalDate,
+  priority: z.enum(["LOW", "NORMAL", "HIGH", "URGENT", "WORK_STOPPAGE"]).default("NORMAL"),
+  status: z.string().trim().min(1).max(60).default("PLANNED"),
+  routerStatus: z.string().trim().min(1).max(60).default("NOT_RELEASED"),
+  materialStatus: z.string().trim().min(1).max(60).default("NOT_ALLOCATED"),
+  qualityStatus: z.string().trim().min(1).max(60).default("NOT_STARTED"),
+  shippingStatus: z.string().trim().min(1).max(60).default("NOT_READY"),
+  ownerId: optionalId,
+  notes: optionalText
+});
+
+export const erpOperationCreateSchema = z.object({
+  workOrderId: id,
+  operationNumber: z.coerce.number().int().positive().max(9999),
+  workCenter: z.string().trim().min(1).max(120),
+  description: z.string().trim().min(2).max(500),
+  setupHours: optionalQuantity,
+  runHours: optionalQuantity,
+  status: z.string().trim().min(1).max(60).default("QUEUED"),
+  scheduledStart: optionalDate,
+  scheduledEnd: optionalDate,
+  assignedToId: optionalId,
+  departmentId: optionalId,
+  ownerId: optionalId
+});
+
+export const erpScheduleCreateSchema = z.object({
+  workOrderId: optionalId,
+  operationId: optionalId,
+  workCenter: z.string().trim().min(1).max(120),
+  scheduleDate: z.string().datetime(),
+  startTime: optionalDate,
+  endTime: optionalDate,
+  priority: z.enum(["LOW", "NORMAL", "HIGH", "URGENT", "WORK_STOPPAGE"]).default("NORMAL"),
+  status: z.string().trim().min(1).max(60).default("SCHEDULED"),
+  departmentId: optionalId,
+  ownerId: optionalId
+});
+
+export const erpInventoryCreateSchema = z.object({
+  itemNumber: z.string().trim().min(1).max(100),
+  partId: optionalId,
+  description: z.string().trim().min(2).max(500),
+  itemType: z.string().trim().min(1).max(80).default("MATERIAL"),
+  unitOfMeasure: z.string().trim().min(1).max(40).default("EA"),
+  quantityOnHand: optionalQuantity.default(0),
+  quantityAllocated: optionalQuantity.default(0),
+  reorderPoint: optionalQuantity,
+  locationCode: optionalShortText,
+  status: z.string().trim().min(1).max(60).default("ACTIVE"),
+  notes: optionalText
+});
+
+export const erpPurchaseOrderCreateSchema = z.object({
+  poNumber: z.string().trim().min(1).max(60).optional(),
+  vendorId: optionalId,
+  orderDate: optionalDate,
+  expectedDate: optionalDate,
+  buyerId: optionalId,
+  totalAmount: optionalMoney,
+  priority: z.enum(["LOW", "NORMAL", "HIGH", "URGENT", "WORK_STOPPAGE"]).default("NORMAL"),
+  status: z.string().trim().min(1).max(60).default("DRAFT"),
+  notes: optionalText
+});
+
+export const erpReceiptCreateSchema = z.object({
+  receiptNumber: z.string().trim().min(1).max(60).optional(),
+  purchaseOrderId: optionalId,
+  vendorId: optionalId,
+  receivedDate: optionalDate,
+  status: z.string().trim().min(1).max(60).default("RECEIVED"),
+  notes: optionalText
+});
+
+export const erpShipmentCreateSchema = z.object({
+  shipmentNumber: z.string().trim().min(1).max(60).optional(),
+  customerId: optionalId,
+  salesOrderId: optionalId,
+  workOrderId: optionalId,
+  carrierName: optionalShortText,
+  trackingNumber: optionalShortText,
+  shipDate: optionalDate,
+  priority: z.enum(["LOW", "NORMAL", "HIGH", "URGENT", "WORK_STOPPAGE"]).default("NORMAL"),
+  status: z.string().trim().min(1).max(60).default("PLANNED"),
+  notes: optionalText
+});
+
+export const erpQualityInspectionCreateSchema = z.object({
+  inspectionNumber: z.string().trim().min(1).max(60).optional(),
+  workOrderId: optionalId,
+  partId: optionalId,
+  inspectionType: z.string().trim().min(1).max(100),
+  result: optionalShortText,
+  inspectorId: optionalId,
+  dueDate: optionalDate,
+  completedAt: optionalDate,
+  priority: z.enum(["LOW", "NORMAL", "HIGH", "URGENT", "WORK_STOPPAGE"]).default("NORMAL"),
+  status: z.string().trim().min(1).max(60).default("PENDING"),
+  departmentId: optionalId,
+  ownerId: optionalId,
+  notes: optionalText
+});
+
+export const erpNonconformanceCreateSchema = z.object({
+  ncrNumber: z.string().trim().min(1).max(60).optional(),
+  workOrderId: optionalId,
+  partId: optionalId,
+  title: z.string().trim().min(3).max(180),
+  severity: z.string().trim().min(1).max(60).default("MEDIUM"),
+  disposition: optionalShortText,
+  priority: z.enum(["LOW", "NORMAL", "HIGH", "URGENT", "WORK_STOPPAGE"]).default("HIGH"),
+  status: z.string().trim().min(1).max(60).default("OPEN"),
+  departmentId: optionalId,
+  ownerId: optionalId,
+  notes: optionalText
+});
+
+export const erpDocumentCreateSchema = z.object({
+  documentNumber: z.string().trim().min(1).max(60).optional(),
+  title: z.string().trim().min(3).max(180),
+  documentType: z.string().trim().min(1).max(100),
+  revision: optionalShortText,
+  relatedType: optionalShortText,
+  relatedId: optionalId,
+  status: z.string().trim().min(1).max(60).default("ACTIVE"),
+  departmentId: optionalId,
+  ownerId: optionalId,
+  notes: optionalText
+});
+
+export const erpTimeEntryCreateSchema = z.object({
+  userId: optionalId,
+  workOrderId: optionalId,
+  operationId: optionalId,
+  entryDate: z.string().datetime(),
+  hours: z.coerce.number().positive().max(24),
+  entryType: z.string().trim().min(1).max(80).default("SHOP_FLOOR"),
+  status: z.string().trim().min(1).max(60).default("SUBMITTED"),
+  departmentId: optionalId,
+  ownerId: optionalId,
+  notes: optionalText
 });
 
 export const uploadRules = {

@@ -1,13 +1,14 @@
 # CleanOps Command Center
 
-CleanOps Command Center is a secure internal operations web app for small shops, manufacturers, service companies, and department-heavy teams that need one place to manage daily operational work.
+CleanOps Command Center is a secure internal shop ERP and operations web app for small shops, manufacturers, service companies, and department-heavy teams that need one place to manage daily operational work.
 
-It focuses on department tickets, onboarding cases, payroll coordination requests, time-off requests, attendance and schedule issues, recurring checklists, approvals, manager tasks, basic employee profile summaries, reports, audit logs, and practical admin configuration.
+It focuses on customers, parts, quotes, sales orders, work orders, shop schedules, inventory, purchasing, receiving, shipping, quality coordination, shop-floor time entries, department tickets, onboarding cases, payroll coordination requests, time-off requests, attendance and schedule issues, recurring checklists, approvals, manager tasks, reports, audit logs, and practical admin configuration.
 
 ## What It Is
 
 | Area | Capability |
 | --- | --- |
+| Internal shop ERP | Customer accounts, part master, quotes, orders, work orders, operations, schedules, inventory, purchasing, receiving, shipping, quality coordination, and shop-floor time |
 | Operations control | Role-aware dashboard, urgent queues, department visibility, manager workload indicators |
 | Department tickets | Department-scoped queues, priorities, status history, comments, reassignment, close/reopen workflow |
 | Onboarding | New hire, contractor, temp, intern, rehire, transfer, and role-change coordination records |
@@ -18,13 +19,28 @@ It focuses on department tickets, onboarding cases, payroll coordination request
 
 ## What It Is Not
 
-CleanOps is not an ERP, payroll processor, HRIS, accounting system, CUI enclave, PCI/payment platform, formal compliance evidence system, CMMC tool, SSP/POA&M system, or cybersecurity operations platform.
+CleanOps is an internal ERP and operations command center. It is not a giant enterprise ERP suite, payroll processor, HRIS, accounting system, CUI enclave, PCI/payment platform, certified compliance product, CMMC tool, SSP/POA&M system, or cybersecurity operations platform.
 
-This platform supports internal operations, department tickets, onboarding, approvals, payroll coordination, checklists, and manager accountability. It is not designed to store CUI, payment-card data, bank information, full SSNs, medical records, tax credentials, payroll passwords, API keys, or cybersecurity secrets.
+This platform supports internal shop ERP operations, department tickets, onboarding, approvals, payroll coordination, checklists, scheduling, inventory, purchasing, shipping, quality coordination, and manager accountability. It is not designed to store CUI, ITAR-controlled data, payment-card data, bank information, full SSNs, medical records, tax credentials, payroll passwords, API keys, cybersecurity secrets, or formal compliance evidence. PCI DSS, CMMC, and other certifications are not guaranteed.
 
 ## Enclave-Compatible Statement
 
 Customers with regulated environments may access this platform from within their own approved secure browser, VDI, or enclave environment, but the customer remains responsible for controlling what data is entered, uploaded, exported, or integrated. This platform is not a CUI enclave and must not be used to store or process CUI unless a future compliant deployment is explicitly designed, contracted, and assessed.
+
+## Internal ERP Scope
+
+| Module | Route | Purpose |
+| --- | --- | --- |
+| ERP Command | `/erp` | Company-wide shop ERP health, job risk, purchasing risk, shipment and quality queues |
+| Customers & Parts | `/erp/customers` | Customer account metadata and safe part master records |
+| Quotes & Orders | `/erp/quotes` | Quote queue, estimated values, customer order handoff, promised dates |
+| Jobs & Work Orders | `/erp/jobs` | Work orders, production operations, material/quality/shipping status |
+| Shop Schedule | `/erp/schedule` | Work-center schedule and dispatch view |
+| Inventory | `/erp/inventory` | Material records, on-hand quantity, allocation, reorder signals |
+| Purchasing & Receiving | `/erp/purchasing` | Vendor records, purchase orders, expected dates, receipts |
+| Shipping | `/erp/shipping` | Shipment planning, carrier/tracking metadata, ship-date status |
+| Quality | `/erp/quality` | Inspection queue and nonconformance coordination, not compliance evidence |
+| Shop Floor | `/erp/shop-floor` | Assigned work visibility and job time entries, not payroll processing |
 
 ## Technical Stack
 
@@ -32,7 +48,7 @@ Customers with regulated environments may access this platform from within their
 | --- | --- |
 | Web app | Next.js App Router, React, TypeScript |
 | Styling | Tailwind CSS plus scoped command-center CSS |
-| Database | PostgreSQL |
+| Database | PostgreSQL source of truth |
 | ORM | Prisma |
 | Validation | Zod |
 | Auth | bcrypt password hashing, signed httpOnly session cookies |
@@ -202,7 +218,7 @@ Use protected branches and require CI before merging to production.
 | Authorization | server-side role checks and department scoping |
 | Roles | exactly `USER`, `MANAGER`, `DIRECTOR`, `ADMIN` |
 | Data boundaries | visible warnings and no prohibited payroll/banking/SSN/CUI fields |
-| Audit | login, failed login, logout, ticket changes, payroll requests, approvals, exports, uploads, and admin actions |
+| Audit | login, failed login, logout, ERP record creation, ticket changes, payroll requests, approvals, exports, uploads, and admin actions |
 | Files | MVP stores metadata only; no persistent file body storage |
 | Exports | CSV report export logs `ReportExport` and `AuditLog` records |
 | Secrets | no hardcoded production secrets, no tokens in browser storage |
@@ -216,6 +232,7 @@ Use protected branches and require CI before merging to production.
 - Add admin process for user creation, password reset, and deactivation.
 - Review department access grants before inviting managers/directors.
 - Confirm employees are trained on prohibited data entry.
+- Confirm customer, part, job, and document records do not contain CUI, ITAR-controlled technical data, payment data, or secrets.
 - Enable Pushover only with approved recipients.
 - Add Sentry or equivalent error monitoring before broad rollout.
 - Review `npm audit` findings and patch dependencies on a recurring cadence.

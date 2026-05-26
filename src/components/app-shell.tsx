@@ -7,6 +7,17 @@ export function AppShell({ user, children }: { user: AuthenticatedUser; children
   const modulesBySlug = new Map(WORKFLOW_MODULES.map((module) => [module.slug, module]));
   const routeOverrides: Record<string, string> = {
     "executive-command-dashboard": "/dashboard",
+    "erp-command-center": "/erp",
+    "customers-parts": "/erp/customers",
+    "quotes-orders": "/erp/quotes",
+    "jobs-work-orders": "/erp/jobs",
+    "shop-schedule": "/erp/schedule",
+    "inventory-materials": "/erp/inventory",
+    "purchasing-receiving": "/erp/purchasing",
+    "shipping": "/erp/shipping",
+    "quality-ncrs": "/erp/quality",
+    "shop-floor-control": "/erp/shop-floor",
+    "erp-documents": "/erp/documents",
     "department-ticket-centers": "/tickets",
     "onboarding-case-management": "/onboarding",
     "payroll-coordination-center": "/payroll-coordination",
@@ -24,6 +35,9 @@ export function AppShell({ user, children }: { user: AuthenticatedUser; children
   const visibleNavigation = NAVIGATION.filter((slug) => {
     if (["admin-settings", "audit-log", "employee-directory"].includes(slug)) {
       return user.userLevel === "ADMIN";
+    }
+    if (["erp-command-center", "customers-parts", "quotes-orders", "jobs-work-orders", "shop-schedule", "inventory-materials", "purchasing-receiving", "shipping", "quality-ncrs"].includes(slug)) {
+      return user.userLevel !== "USER";
     }
     if (["approval-queue", "reports-exports"].includes(slug)) {
       return user.userLevel !== "USER";
@@ -50,7 +64,7 @@ export function AppShell({ user, children }: { user: AuthenticatedUser; children
                   <Icon size={18} />
                   <span>{item.navLabel}</span>
                 </span>
-                {index === 1 ? <span className="nav-badge">24</span> : null}
+                {slug === "department-ticket-centers" ? <span className="nav-badge">24</span> : null}
                 {slug === "approval-queue" ? <span className="nav-badge">7</span> : null}
               </Link>
             );
@@ -73,11 +87,11 @@ export function AppShell({ user, children }: { user: AuthenticatedUser; children
         <header className="topbar">
           <div className="top-title">
             <strong>{PRODUCT_NAME}</strong>
-            <span>Internal operations command center</span>
+            <span>Internal shop ERP and operations command center</span>
           </div>
           <div className="search">
             <Search size={18} />
-            <input aria-label="Search" placeholder="Search employees, tickets, departments, requests..." />
+            <input aria-label="Search" placeholder="Search jobs, customers, parts, tickets, employees..." />
           </div>
           <div className="user-chip">
             <Bell size={20} />

@@ -2,11 +2,13 @@
 
 ## Executive Summary
 
-CleanOps Command Center is a focused internal operations platform for small shops, manufacturers, service companies, and department-heavy teams. It centralizes daily operational work that is commonly scattered across texts, spreadsheets, sticky notes, emails, verbal follow-ups, and manager memory.
+CleanOps Command Center is a focused internal shop ERP and operations platform for small shops, manufacturers, service companies, and department-heavy teams. It centralizes daily operational work that is commonly scattered across sluggish legacy systems, texts, spreadsheets, sticky notes, emails, verbal follow-ups, and manager memory.
 
-The MVP provides secure browser-based workflows for department tickets, onboarding cases, payroll coordination, time-off requests, attendance and schedule issues, tasks, recurring checklists, approvals, reports, audit logs, data boundaries, and practical admin configuration.
+The platform provides secure browser-based workflows for customer accounts, part master records, quotes, sales orders, work orders, shop scheduling, inventory, purchasing, receiving, shipping, quality coordination, shop-floor time entries, department tickets, onboarding cases, payroll coordination, time-off requests, attendance and schedule issues, tasks, recurring checklists, approvals, reports, audit logs, data boundaries, and practical admin configuration.
 
 Production readiness status: the app builds successfully, has a Railway-compatible deployment path, uses PostgreSQL through Prisma, enforces server-side role checks, supports bootstrap admin creation, logs sensitive actions, and exposes `/health`. The product is suitable for a controlled MVP launch after environment configuration, database backup setup, admin password rotation, and operational user training.
+
+Boundary status: CleanOps is an internal ERP and operations command center. It does not guarantee PCI DSS, CMMC, or other certifications, does not process payments, does not calculate payroll taxes, and must not be used for CUI, ITAR-controlled data, cardholder data, banking data, full SSNs, PHI, secrets, or formal compliance evidence packets.
 
 ## System Architecture
 
@@ -17,6 +19,8 @@ Production readiness status: the app builds successfully, has a Railway-compatib
 | Auth module | bcrypt hashing, signed httpOnly cookie sessions, current-user loading |
 | RBAC module | Permission mapping for `USER`, `MANAGER`, `DIRECTOR`, `ADMIN` |
 | Department scope | Manager department restriction and director department-access grants |
+| ERP module layer | Customers, vendors, parts, quotes, sales orders, work orders, operations, schedules, inventory, purchasing, receipts, shipments, inspections, NCRs, documents, and time entries |
+| Data boundary guard | Shared route guard that rejects prohibited sensitive field names before ERP record validation |
 | Audit module | Database audit records for sensitive operations |
 | Notification module | Optional Pushover alerts with non-blocking failure handling |
 | Reporting module | Report records, CSV export, export history, audit log entries |
@@ -31,7 +35,7 @@ Runtime flow:
 6. Sensitive mutations write `AuditLog` rows.
 7. Optional alerts write `NotificationLog` rows.
 
-Design philosophy: keep the MVP operationally useful, security-conscious, and maintainable without creating fake enterprise complexity or compliance claims.
+Design philosophy: make the shop faster and cleaner without pretending to be a certified compliance enclave or a full finance/payroll/accounting suite.
 
 ## Technical Stack
 
@@ -88,6 +92,31 @@ Inputs: email and password.
 Workflow: if no users exist, `/login` and `/api/auth/login` attempt bootstrap admin creation from environment variables. Passwords are hashed with bcrypt. Successful login sets a signed httpOnly cookie.
 
 Failure scenarios: missing bootstrap env vars prevents first-user creation; invalid credentials return a safe error; failed login writes an audit event when an organization exists.
+
+### Internal Shop ERP
+
+Purpose: provide a fast internal ERP layer for shops that need practical control over customer/order/job/material/quality/shipping work without adopting a heavyweight enterprise system.
+
+Inputs: customer account metadata, vendor metadata, part master metadata, quote/order summaries, work order details, operation routing, schedule dates, inventory quantities, purchase order summaries, receipts, shipment metadata, inspection records, nonconformance coordination records, document metadata, and shop-floor time entries.
+
+Outputs: live ERP dashboards, scoped module pages, auditable record creation, report-ready tables, and API-accessible records.
+
+Internal workflow:
+
+1. Sales/admin records safe customer and part metadata.
+2. Quotes are created with estimated values and due dates.
+3. Sales orders capture customer PO references and promised dates.
+4. Work orders connect the order, customer, part, department, quantity, due date, and status.
+5. Operations define work centers and planned effort.
+6. Schedule items dispatch work by work center/date.
+7. Inventory and purchasing records track material status and expected receipts.
+8. Shipping records track shipment readiness, carrier, tracking, and ship date.
+9. Quality inspection and NCR records coordinate production quality work without claiming formal compliance evidence.
+10. Shop-floor time entries support job visibility and job costing, not payroll processing.
+
+Failure scenarios: missing reference records, duplicate record numbers, department-scope denial, prohibited sensitive fields, invalid dates/numbers, and attempted user access to manager-only ERP modules.
+
+Operational considerations: ERP documents are metadata-only by default; customer PO numbers are allowed as order references, but payment-card and banking data are prohibited. Quality and NCR records are for internal production coordination, not certification evidence.
 
 ### Role and Department Authorization
 
@@ -167,6 +196,8 @@ Purpose: provide clean internal reporting without compliance-audit claims.
 
 Reports include open tickets, overdue tickets, onboarding readiness, payroll coordination, time-off, manager workload, and audit activity.
 
+ERP reports include job backlog, quote aging, sales order readiness, shop schedule, inventory summary, low stock, purchase order, receiving, shipping, inspection queue, NCR summary, and shop-floor time reports.
+
 CSV export is implemented at `/api/reports/csv` and logs both `ReportExport` and `AuditLog`.
 
 ## API Documentation
@@ -189,6 +220,22 @@ CSV export is implemented at `/api/reports/csv` and logs both `ReportExport` and
 | `/api/reports` | GET, POST | `report:view/export` | Report generation |
 | `/api/reports/csv` | GET | `report:export` | Open-ticket CSV export |
 | `/api/files` | POST | `file:upload` | Metadata-only upload record |
+| `/api/erp/customers` | GET, POST | `erp:view/create` | Customer account records |
+| `/api/erp/vendors` | GET, POST | `erp:view/create` | Vendor account records |
+| `/api/erp/parts` | GET, POST | `erp:view/create` | Part master records |
+| `/api/erp/quotes` | GET, POST | `erp:view/create` | Quote queue |
+| `/api/erp/sales-orders` | GET, POST | `erp:view/create` | Sales order records |
+| `/api/erp/jobs` | GET, POST | `erp:view/create` | Work order records |
+| `/api/erp/operations` | GET, POST | `erp:view/create` | Work order operations |
+| `/api/erp/schedule` | GET, POST | `erp:view/create` | Shop schedule records |
+| `/api/erp/inventory` | GET, POST | `erp:view/create` | Inventory item records |
+| `/api/erp/purchasing` | GET, POST | `erp:view/create` | Purchase order records |
+| `/api/erp/receipts` | GET, POST | `erp:view/create` | Receiving records |
+| `/api/erp/shipments` | GET, POST | `erp:view/create` | Shipment records |
+| `/api/erp/quality` | GET, POST | `erp:view/create` | Inspection records |
+| `/api/erp/nonconformance` | GET, POST | `erp:view/create` | NCR coordination records |
+| `/api/erp/documents` | GET, POST | `erp:view/create` | Safe ERP document metadata |
+| `/api/erp/time-entries` | GET, POST | Session | Shop-floor time entries |
 | `/api/admin/readiness` | GET | `admin:manage` | Protected DB readiness |
 | `/health` | GET | Public | Railway health check |
 
@@ -203,6 +250,7 @@ Implemented controls:
 - server-side permission checks
 - manager and director department scoping
 - Zod validation on API input
+- shared ERP data-boundary guard for prohibited sensitive field names
 - audit logging for auth, tickets, payroll requests, approvals, exports, uploads, and admin operations
 - no browser localStorage tokens
 - no prohibited banking, SSN, medical, CUI, card, or secret fields in the operational MVP
@@ -249,7 +297,9 @@ Troubleshooting:
 | `src/lib/bootstrap.ts` | First admin creation |
 | `src/lib/audit.ts` | Audit log writer |
 | `src/lib/pushover.ts` | Optional notification integration |
-| `src/lib/validators.ts` | Zod input schemas |
+| `src/lib/validators.ts` | Zod input schemas, including ERP record schemas |
+| `src/lib/erp-routes.ts` | Shared ERP route handler with RBAC, scoping, validation, data-boundary checks, and audit writes |
+| `src/lib/erp-data.ts` | ERP dashboard and reference-data queries |
 | `prisma/schema.prisma` | Database schema |
 | `prisma/seed.ts` | Safe reference seed |
 | `.github/workflows/ci.yml` | CI verification |
@@ -282,6 +332,7 @@ Development rules:
 - Call `recordAudit` for sensitive mutations.
 - Apply `canAccessDepartment` or `departmentScopeForUser` to scoped records.
 - Do not add compliance, CUI, PCI, or cybersecurity evidence modules.
+- Keep ERP modules fast, scoped, auditable, and free of payment, regulated-data, and certification claims.
 
 ## Known Risks & Limitations
 
@@ -290,6 +341,7 @@ Development rules:
 | User management | Admin pages are operational views; full CRUD and password reset should be expanded |
 | Uploads | Metadata-only MVP; no durable private file storage |
 | Reporting | CSV export exists; PDF/DOCX/XLSX need future implementation |
+| ERP depth | ERP modules are production-backed MVP workflows, not a full accounting/finance/MRP replacement yet |
 | Notifications | Pushover only; no email/SMS queue yet |
 | Session storage | Signed cookie sessions; DB session model exists for future server-side revocation |
 | Director grants | Schema and auth support grants; admin grant workflow should be expanded |
@@ -305,3 +357,4 @@ Development rules:
 6. Rate limiting backed by database or Redis-compatible storage.
 7. Row-level database constraints and stronger relational foreign keys.
 8. Production monitoring, Sentry integration, and restore drills.
+9. Richer shop ERP capabilities: BOMs, routings, costing snapshots, barcode workflows, revision controls, job travelers, receiving inspections, vendor scorecards, and safe import tools.

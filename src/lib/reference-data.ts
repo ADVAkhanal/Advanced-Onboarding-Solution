@@ -38,10 +38,10 @@ import type { LucideIcon } from "lucide-react";
 export const PRODUCT_NAME = process.env.APP_NAME ?? "CleanOps Command Center";
 export const SHORT_NAME = "CleanOps";
 export const COMMERCIAL_NAME = "CleanOps Command Center";
-export const TAGLINE = "Tickets · Onboarding · Approvals · Payroll Coordination · Manager Accountability";
-export const BRAND_FOOTER = "Organized shops. Accountable managers. Trackable work.";
+export const TAGLINE = "ERP · Jobs · Quotes · Inventory · Tickets · Manager Accountability";
+export const BRAND_FOOTER = "Faster shops. Cleaner jobs. Accountable work.";
 export const DISCLAIMER =
-  "This platform supports internal operations, department tickets, onboarding, approvals, payroll coordination, checklists, and manager accountability. It is not designed to store CUI, payment-card data, bank information, full SSNs, medical records, tax credentials, payroll passwords, API keys, or cybersecurity secrets.";
+  "This platform supports internal shop ERP operations, department tickets, onboarding, approvals, payroll coordination, checklists, scheduling, inventory, purchasing, shipping, quality coordination, and manager accountability. It is not designed to store CUI, ITAR-controlled data, payment-card data, bank information, full SSNs, medical records, tax credentials, payroll passwords, API keys, cybersecurity secrets, or formal compliance evidence. PCI DSS, CMMC, and other certifications are not guaranteed.";
 export const ENCLAVE_COMPATIBLE_STATEMENT =
   "Customers with regulated environments may access this platform from within their own approved secure browser, VDI, or enclave environment, but the customer remains responsible for controlling what data is entered, uploaded, exported, or integrated. This platform is not a CUI enclave and must not be used to store or process CUI unless a future compliant deployment is explicitly designed, contracted, and assessed.";
 
@@ -297,6 +297,171 @@ export const WORKFLOW_MODULES: WorkflowModule[] = [
     fields: ["department", "manager", "date range", "filters", "summary metrics", "report ID"],
     statuses: ["Healthy", "Needs Attention", "Blocked", "Escalated"],
     reports: ["Company Operations Summary", "Department Health Report", "Manager Accountability Report"]
+  },
+  {
+    slug: "erp-command-center",
+    title: "ERP Command Center",
+    navLabel: "ERP Command",
+    icon: Gauge,
+    summary: "Internal shop ERP command center for customers, quotes, sales orders, work orders, schedules, inventory, purchasing, shipping, quality coordination, and shop-floor time.",
+    owner: "Operations, Directors, Global Admin",
+    primaryAction: "Create Work Order",
+    secondaryAction: "Open Job Queue",
+    metricLabels: ["Active jobs", "Late jobs", "Open POs", "Quality queue"],
+    workflows: ["Quote to order", "Order to work order", "Material and purchasing", "Shipping and quality handoff"],
+    fields: ["customer", "quote", "order", "work order", "part", "quantity", "due date", "owner", "status"],
+    statuses: ["Planned", "Released", "In Process", "Blocked", "Ready to Ship", "Closed"],
+    reports: ["ERP Operations Summary", "Job Backlog Report", "Shop Readiness Report"]
+  },
+  {
+    slug: "customers-parts",
+    title: "Customers & Parts",
+    navLabel: "Customers & Parts",
+    icon: Handshake,
+    summary: "Customer account records and part master records with safe metadata only. No payment cards, banking data, CUI, ITAR-controlled files, or regulated technical data.",
+    owner: "Sales, Engineering, Admin",
+    primaryAction: "Add Customer",
+    secondaryAction: "Add Part",
+    metricLabels: ["Customers", "Active parts", "Customer-owned parts", "Needs review"],
+    workflows: ["Create account", "Create part", "Link customer", "Archive obsolete record"],
+    fields: ["account number", "customer", "contact", "part number", "revision", "description", "make/buy"],
+    statuses: ["ACTIVE", "HOLD", "ARCHIVED"],
+    reports: ["Customer Account Report", "Part Master Report"]
+  },
+  {
+    slug: "quotes-orders",
+    title: "Quotes & Orders",
+    navLabel: "Quotes & Orders",
+    icon: FileSpreadsheet,
+    summary: "Quote and sales-order tracking with safe estimated values, customer PO references, promised dates, and order handoff visibility.",
+    owner: "Sales, Operations",
+    primaryAction: "Create Quote",
+    secondaryAction: "Create Sales Order",
+    metricLabels: ["Open quotes", "Orders open", "Quotes due", "Orders at risk"],
+    workflows: ["Estimate quote", "Review quote", "Create order", "Release job"],
+    fields: ["quote number", "customer", "title", "due date", "estimated value", "order number", "promised date"],
+    statuses: ["DRAFT", "IN_REVIEW", "SENT", "OPEN", "RELEASED", "CLOSED"],
+    reports: ["Quote Aging Report", "Sales Order Readiness Report"]
+  },
+  {
+    slug: "jobs-work-orders",
+    title: "Jobs & Work Orders",
+    navLabel: "Jobs & Work Orders",
+    icon: Wrench,
+    summary: "Production work orders and operation routing with job status, material status, quality status, schedule status, ownership, and due dates.",
+    owner: "Production, Operations",
+    primaryAction: "Create Work Order",
+    secondaryAction: "Add Operation",
+    metricLabels: ["Active jobs", "Late jobs", "Blocked jobs", "Operations queued"],
+    workflows: ["Create work order", "Add router operation", "Assign work center", "Close job"],
+    fields: ["work order", "part", "customer", "quantity", "operation", "work center", "due date", "status"],
+    statuses: ["PLANNED", "RELEASED", "IN_PROCESS", "BLOCKED", "COMPLETE", "CLOSED"],
+    reports: ["Job Backlog Report", "Operation Queue Report", "Late Work Order Report"]
+  },
+  {
+    slug: "shop-schedule",
+    title: "Shop Schedule",
+    navLabel: "Shop Schedule",
+    icon: CalendarClock,
+    summary: "Work-center schedule and dispatch board for scheduled jobs, priorities, coverage signals, and work stoppage visibility.",
+    owner: "Operations, Managers",
+    primaryAction: "Schedule Work",
+    secondaryAction: "Review Dispatch",
+    metricLabels: ["Scheduled", "Work centers", "Work stoppage", "Due today"],
+    workflows: ["Schedule operation", "Assign owner", "Review priority", "Update status"],
+    fields: ["work order", "operation", "work center", "schedule date", "priority", "owner"],
+    statuses: ["SCHEDULED", "RUNNING", "HOLD", "COMPLETE", "CANCELLED"],
+    reports: ["Shop Schedule Report", "Work Center Load Report"]
+  },
+  {
+    slug: "inventory-materials",
+    title: "Inventory & Materials",
+    navLabel: "Inventory",
+    icon: PackageCheck,
+    summary: "Inventory item records, material quantities, allocations, reorder points, locations, and low-stock visibility for internal operations.",
+    owner: "Materials, Purchasing, Operations",
+    primaryAction: "Add Inventory Item",
+    secondaryAction: "Review Low Stock",
+    metricLabels: ["Items", "Allocated", "Low stock", "Locations"],
+    workflows: ["Create item", "Allocate material", "Review reorder", "Adjust status"],
+    fields: ["item number", "part", "description", "on hand", "allocated", "reorder point", "location"],
+    statuses: ["ACTIVE", "LOW_STOCK", "HOLD", "ARCHIVED"],
+    reports: ["Inventory Summary", "Low Stock Report", "Material Allocation Report"]
+  },
+  {
+    slug: "purchasing-receiving",
+    title: "Purchasing & Receiving",
+    navLabel: "Purchasing",
+    icon: PackageCheck,
+    summary: "Vendor records, purchase orders, expected dates, receiving records, material follow-up, and purchasing accountability.",
+    owner: "Purchasing, Receiving",
+    primaryAction: "Create Purchase Order",
+    secondaryAction: "Record Receipt",
+    metricLabels: ["Open POs", "Late POs", "Vendors", "Receipts"],
+    workflows: ["Create vendor", "Create PO", "Track expected date", "Record receipt"],
+    fields: ["vendor", "PO number", "expected date", "estimated total", "receipt number", "status"],
+    statuses: ["DRAFT", "ORDERED", "PARTIAL", "RECEIVED", "LATE", "CLOSED"],
+    reports: ["Purchase Order Report", "Receiving Report", "Vendor Follow-Up Report"]
+  },
+  {
+    slug: "shipping",
+    title: "Shipping",
+    navLabel: "Shipping",
+    icon: PackageCheck,
+    summary: "Shipment planning for customer orders and work orders with carrier, tracking, ship date, readiness, and hold visibility.",
+    owner: "Shipping / Receiving",
+    primaryAction: "Plan Shipment",
+    secondaryAction: "Review Holds",
+    metricLabels: ["Planned", "Ready", "On hold", "Shipped"],
+    workflows: ["Plan shipment", "Link order", "Record tracking", "Mark shipped"],
+    fields: ["shipment number", "customer", "order", "work order", "carrier", "tracking", "ship date"],
+    statuses: ["PLANNED", "READY", "HOLD", "SHIPPED", "CANCELLED"],
+    reports: ["Shipment Board Report", "Shipping Readiness Report"]
+  },
+  {
+    slug: "quality-ncrs",
+    title: "Quality & NCRs",
+    navLabel: "Quality",
+    icon: ClipboardCheck,
+    summary: "Inspection queues and nonconformance coordination for internal production control. Not a formal compliance evidence or certification system.",
+    owner: "Quality Manager",
+    primaryAction: "Create Inspection",
+    secondaryAction: "Create NCR",
+    metricLabels: ["Inspections", "Open NCRs", "Holds", "Completed"],
+    workflows: ["Queue inspection", "Record result", "Create NCR", "Disposition issue"],
+    fields: ["inspection number", "work order", "part", "inspection type", "result", "NCR", "severity", "disposition"],
+    statuses: ["PENDING", "IN_PROGRESS", "PASS", "FAIL", "OPEN", "DISPOSITION", "CLOSED"],
+    reports: ["Inspection Queue Report", "NCR Summary Report"]
+  },
+  {
+    slug: "shop-floor-control",
+    title: "Shop Floor Control",
+    navLabel: "Shop Floor",
+    icon: Timer,
+    summary: "Shop-floor work view and job time entries for operational visibility and job costing. Time entries are not payroll processing.",
+    owner: "Employees, Managers",
+    primaryAction: "Submit Time Entry",
+    secondaryAction: "Review My Work",
+    metricLabels: ["Visible jobs", "Scheduled items", "Time entries", "Hours logged"],
+    workflows: ["View scheduled work", "Submit time", "Add work notes", "Manager review"],
+    fields: ["employee", "work order", "operation", "entry date", "hours", "notes", "status"],
+    statuses: ["SUBMITTED", "REVIEWED", "APPROVED", "REJECTED"],
+    reports: ["Shop Floor Time Report", "Job Time Summary"]
+  },
+  {
+    slug: "erp-documents",
+    title: "ERP Document Records",
+    navLabel: "ERP Documents",
+    icon: ScrollText,
+    summary: "Safe document metadata and revision records for operational use. Files or metadata must not contain CUI, ITAR data, secrets, PHI, or compliance evidence packets.",
+    owner: "Engineering, Quality, Admin",
+    primaryAction: "Add Document Record",
+    secondaryAction: "Review Revisions",
+    metricLabels: ["Documents", "Revisions", "Linked records", "Needs review"],
+    workflows: ["Create document record", "Link related record", "Update revision", "Archive obsolete metadata"],
+    fields: ["document number", "title", "type", "revision", "related record", "visibility", "status"],
+    statuses: ["ACTIVE", "NEEDS_REVIEW", "ARCHIVED"],
+    reports: ["Document Metadata Report", "Revision Summary"]
   },
   {
     slug: "director-oversight-dashboard",
@@ -887,6 +1052,16 @@ export const WORKFLOW_MODULES: WorkflowModule[] = [
 
 export const NAVIGATION = [
   "executive-command-dashboard",
+  "erp-command-center",
+  "customers-parts",
+  "quotes-orders",
+  "jobs-work-orders",
+  "shop-schedule",
+  "inventory-materials",
+  "purchasing-receiving",
+  "shipping",
+  "quality-ncrs",
+  "shop-floor-control",
   "department-ticket-centers",
   "onboarding-case-management",
   "payroll-coordination-center",
@@ -932,7 +1107,24 @@ export const REPORT_TYPES = [
   "Employee Task Report",
   "Equipment Request Report",
   "Training Assignment Report",
-  "Policy Acknowledgment Report"
+  "Policy Acknowledgment Report",
+  "ERP Operations Summary",
+  "Customer Account Report",
+  "Part Master Report",
+  "Quote Aging Report",
+  "Sales Order Readiness Report",
+  "Job Backlog Report",
+  "Operation Queue Report",
+  "Late Work Order Report",
+  "Shop Schedule Report",
+  "Inventory Summary",
+  "Low Stock Report",
+  "Purchase Order Report",
+  "Receiving Report",
+  "Shipment Board Report",
+  "Inspection Queue Report",
+  "NCR Summary Report",
+  "Shop Floor Time Report"
 ] as const;
 
 export function slugify(value: string) {
