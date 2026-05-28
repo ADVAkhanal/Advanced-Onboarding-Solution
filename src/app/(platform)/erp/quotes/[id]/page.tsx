@@ -5,6 +5,7 @@ import { formatShortDate } from "@/lib/erp-data";
 import { prisma } from "@/lib/prisma";
 import { complexityLabel, diameterLabel, materialLabel, processLabel } from "@/lib/quoting";
 import { DataTable, type Column } from "@/components/data-table";
+import { QuoteStatusActions } from "./status-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -248,6 +249,22 @@ export default async function QuoteDetailPage({ params }: { params: { id: string
           </div>
         </section>
       </div>
+
+      {user.permissions.includes("quote:price") ? (
+        <section className="card" style={{ marginTop: 14 }}>
+          <div className="section-title">
+            <h2>Status actions</h2>
+            <span className={statusPillClass(quote.status)}>{statusLabel(quote.status)}</span>
+          </div>
+          <div className="card-pad">
+            <QuoteStatusActions
+              quoteId={quote.id}
+              currentStatus={quote.status}
+              canSubmit={user.permissions.includes("quote:submit")}
+            />
+          </div>
+        </section>
+      ) : null}
 
       <section className="card" style={{ marginTop: 14 }}>
         <div className="section-title">

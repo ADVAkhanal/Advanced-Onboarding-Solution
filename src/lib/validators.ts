@@ -285,6 +285,13 @@ export const erpManufacturingQuoteCreateSchema = z.object({
   exportControlFlag: z.coerce.boolean().optional()
 });
 
+// Quote status transition. The route enforces the state machine; the
+// schema only validates the target is one of the known statuses.
+export const erpQuoteStatusTransitionSchema = z.object({
+  status: z.enum(["DRAFT", "QUOTED", "WON", "LOST", "ON_HOLD", "EXPIRED"]),
+  reason: z.string().trim().min(1).max(500).optional()
+});
+
 // Cycle-time lookup upsert payload. The bucket fields (material,
 // process, complexity, diameter) are the unique key — POSTs upsert
 // against an existing row when the bucket matches.
