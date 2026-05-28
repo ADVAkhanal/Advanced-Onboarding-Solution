@@ -1438,6 +1438,58 @@ a.card:hover,
   animation: motion-fade-in var(--motion-fast) var(--motion-ease) both;
 }
 
+/* ------------------------------------------------------------------------ */
+/* Focus rings                                                               */
+/* All custom-styled interactive surfaces get a visible :focus-visible ring. */
+/* Uses outline (not box-shadow) so hover-transforms don't clip the ring.    */
+/* ------------------------------------------------------------------------ */
+
+.button:focus-visible,
+.tb-btn:focus-visible,
+.filter-chip:focus-visible,
+.modal-close:focus-visible,
+.link:focus-visible,
+a.card:focus-visible,
+.card-interactive:focus-visible,
+button.pill:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+/* Sidebar lives on a dark surface — use cyan for contrast. */
+.nav-item:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: -2px;
+}
+
+/* Form fields: ring + tinted border so the focused field reads clearly. */
+.input:focus-visible,
+.textarea:focus-visible,
+.select:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 1px;
+  border-color: var(--blue);
+}
+
+/* Topbar search lives on a dark surface. */
+.search:focus-within {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+/* Modal dialog itself can receive focus (tabIndex={-1}); show the ring
+   only when keyboard-focused via :focus-visible. */
+.modal:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: -2px;
+}
+
+/* Quiz options are buttons; reuse the ring. */
+.quiz-option:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
 /* Respect users who prefer reduced motion. */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -1448,5 +1500,27 @@ a.card:hover,
     animation-iteration-count: 1 !important;
     transition-duration: 1ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* High-contrast / forced-colors mode: ensure focus rings remain visible
+   even when the user agent overrides colors. */
+@media (forced-colors: active) {
+  .button:focus-visible,
+  .tb-btn:focus-visible,
+  .filter-chip:focus-visible,
+  .nav-item:focus-visible,
+  .modal-close:focus-visible,
+  .link:focus-visible,
+  a.card:focus-visible,
+  .card-interactive:focus-visible,
+  .input:focus-visible,
+  .textarea:focus-visible,
+  .select:focus-visible,
+  .modal:focus-visible,
+  .quiz-option:focus-visible,
+  button.pill:focus-visible {
+    outline: 2px solid CanvasText;
+    outline-offset: 2px;
   }
 }
