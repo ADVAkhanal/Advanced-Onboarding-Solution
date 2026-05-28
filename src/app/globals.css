@@ -773,6 +773,33 @@ h3 {
   background: var(--soft);
 }
 
+/* Sticky thead keeps headers visible during long scroll. The table's
+   parent (.card / scroll container) provides the scrollport. */
+.data-table-sticky thead th {
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 1;
+  box-shadow: inset 0 -1px 0 var(--line);
+}
+
+/* Right-aligned, monospaced figures for currency / counts / durations.
+   tabular-nums keeps columns visually aligned even with proportional fonts. */
+.td-numeric {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  white-space: nowrap;
+}
+
+.data-table thead th {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Row count caption (hidden visually) is announced when the table updates. */
+.data-table caption {
+  caption-side: top;
+}
+
 .toolbar {
   display: flex;
   align-items: center;
