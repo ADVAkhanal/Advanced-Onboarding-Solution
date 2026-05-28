@@ -48,6 +48,56 @@ enum ExportFormat {
   JSON
 }
 
+// Manufacturing-aware quoting enums.
+// Broad categories only — these never carry CUI alloy specs or
+// export-controlled technical data. The fields exist so cycle-time
+// lookups can be indexed; specific alloys / drawings remain off-platform.
+
+enum MaterialCategory {
+  ALLOY_STEEL
+  STAINLESS_STEEL
+  CARBON_STEEL
+  ALUMINUM
+  TITANIUM
+  BRASS
+  COPPER
+  NICKEL_ALLOY
+  PLASTIC
+  COMPOSITE
+  OTHER
+}
+
+enum ManufacturingProcess {
+  TURNING
+  MILLING
+  MULTI_SPINDLE
+  SWISS_TURNING
+  GRINDING
+  EDM
+  WIRE_EDM
+  HONING
+  LAPPING
+  INSPECTION
+  ASSEMBLY
+  OTHER
+}
+
+enum ComplexityClass {
+  SIMPLE
+  MODERATE
+  COMPLEX
+  HIGHLY_COMPLEX
+}
+
+enum DiameterClass {
+  UNDER_25_MM
+  FROM_25_TO_75_MM
+  FROM_75_TO_150_MM
+  FROM_150_TO_300_MM
+  OVER_300_MM
+  NOT_APPLICABLE
+}
+
 model Organization {
   id          String    @id @default(cuid())
   name        String
@@ -2058,26 +2108,35 @@ model VendorAccount {
 }
 
 model Part {
-  id             String    @id @default(cuid())
-  organizationId String
-  partNumber     String
-  revision       String    @default("A")
-  description    String
-  customerId     String?
-  unitOfMeasure  String    @default("EA")
-  makeBuy        String    @default("MAKE")
-  status         String    @default("ACTIVE")
-  notes          String?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  createdById    String?
-  updatedById    String?
-  departmentId   String?
-  ownerId        String?
-  archivedAt     DateTime?
+  id                 String                @id @default(cuid())
+  organizationId     String
+  partNumber         String
+  revision           String                @default("A")
+  description        String
+  customerId         String?
+  unitOfMeasure      String                @default("EA")
+  makeBuy            String                @default("MAKE")
+  status             String                @default("ACTIVE")
+  notes              String?
+  // Manufacturing-aware quoting fields. Broad categories only — never
+  // store CUI alloy specs, controlled drawings, or export-controlled
+  // technical data on this row. See docs/data-scope-boundary.md.
+  materialCategory   MaterialCategory?
+  primaryProcess     ManufacturingProcess?
+  complexityClass    ComplexityClass?
+  diameterClass      DiameterClass?
+  exportControlFlag  Boolean               @default(false)
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+  createdById        String?
+  updatedById        String?
+  departmentId       String?
+  ownerId            String?
+  archivedAt         DateTime?
 
   @@unique([organizationId, partNumber, revision])
   @@index([organizationId, customerId])
+  @@index([organizationId, materialCategory, primaryProcess])
   @@map("parts")
 }
 
@@ -2108,25 +2167,71 @@ model Quote {
 }
 
 model QuoteLine {
-  id             String   @id @default(cuid())
-  organizationId String
-  quoteId        String
-  partId         String?
-  description    String
-  quantity       Decimal  @default(1) @db.Decimal(12, 2)
-  unitPrice      Decimal? @db.Decimal(12, 2)
-  estimatedHours Decimal? @db.Decimal(12, 2)
-  status         String   @default("OPEN")
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  createdById    String?
-  updatedById    String?
-  departmentId   String?
-  ownerId        String?
-  archivedAt     DateTime?
+  id                  String                @id @default(cuid())
+  organizationId      String
+  quoteId             String
+  partId              String?
+  description         String
+  quantity            Decimal               @default(1) @db.Decimal(12, 2)
+  unitPrice           Decimal?              @db.Decimal(12, 2)
+  estimatedHours      Decimal?              @db.Decimal(12, 2)
+  status              String                @default("OPEN")
+  // Manufacturing-aware costing breakdown. All values are snapshots at
+  // quote time — they do not change if rate tables update later.
+  materialCategory    MaterialCategory?
+  process             ManufacturingProcess?
+  complexityClass     ComplexityClass?
+  diameterClass       DiameterClass?
+  setupHours          Decimal?              @db.Decimal(8, 2)
+  cycleMinutesPerPiece Decimal?             @db.Decimal(8, 3)
+  materialCostPerUnit Decimal?              @db.Decimal(12, 4)
+  laborRatePerHour    Decimal?              @db.Decimal(8, 2)
+  burdenRatePerHour   Decimal?              @db.Decimal(8, 2)
+  marginPercent       Decimal?              @db.Decimal(5, 2)
+  cycleTimeLookupId   String?
+  routingNotes        String?
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  createdById         String?
+  updatedById         String?
+  departmentId        String?
+  ownerId             String?
+  archivedAt          DateTime?
 
   @@index([organizationId, quoteId])
+  @@index([organizationId, cycleTimeLookupId])
   @@map("quote_lines")
+}
+
+// CycleTimeLookup is the load-bearing differentiator for the quoting
+// workflow. Estimators pick material + process + complexity + diameter
+// class and the system returns historical setup/cycle estimates derived
+// from past completed jobs. No CUI alloy specs or drawings live here —
+// only broad bucket keys and aggregated time metadata.
+model CycleTimeLookup {
+  id                     String               @id @default(cuid())
+  organizationId         String
+  materialCategory       MaterialCategory
+  process                ManufacturingProcess
+  complexityClass        ComplexityClass
+  diameterClass          DiameterClass        @default(NOT_APPLICABLE)
+  estimatedSetupHours    Decimal              @db.Decimal(8, 2)
+  estimatedCycleMinutes  Decimal              @db.Decimal(8, 3)
+  sampleSize             Int                  @default(0)
+  confidenceScore        Decimal?             @db.Decimal(3, 2)
+  lastReviewedAt         DateTime?
+  reviewedById           String?
+  notes                  String?
+  status                 String               @default("ACTIVE")
+  createdAt              DateTime             @default(now())
+  updatedAt              DateTime             @updatedAt
+  createdById            String?
+  updatedById            String?
+  archivedAt             DateTime?
+
+  @@unique([organizationId, materialCategory, process, complexityClass, diameterClass])
+  @@index([organizationId, status])
+  @@map("cycle_time_lookups")
 }
 
 model SalesOrder {
