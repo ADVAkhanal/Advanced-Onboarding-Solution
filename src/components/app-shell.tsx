@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Bell, CalendarDays, Inbox, Search, ShieldAlert } from "lucide-react";
+import { Bell, BookOpenCheck, CalendarDays, GraduationCap, Inbox, MessageSquareQuote, Search, ShieldAlert } from "lucide-react";
 import type { AuthenticatedUser } from "@/lib/auth";
 import { BRAND_FOOTER, DISCLAIMER, NAVIGATION, PRODUCT_NAME, WORKFLOW_MODULES } from "@/lib/reference-data";
 
@@ -69,6 +69,26 @@ export function AppShell({ user, children }: { user: AuthenticatedUser; children
               </Link>
             );
           })}
+          <Link className="nav-item" href="/sop">
+            <span className="nav-left">
+              <BookOpenCheck size={18} />
+              <span>SOP Assistant</span>
+            </span>
+          </Link>
+          {user.userLevel !== "USER" ? (
+            <Link className="nav-item" href="/sop/escalations">
+              <span className="nav-left">
+                <MessageSquareQuote size={18} />
+                <span>SOP Escalations</span>
+              </span>
+            </Link>
+          ) : null}
+          <Link className="nav-item" href="/training">
+            <span className="nav-left">
+              <GraduationCap size={18} />
+              <span>Training</span>
+            </span>
+          </Link>
           <Link className="nav-item" href="/data-boundaries">
             <span className="nav-left">
               <ShieldAlert size={18} />

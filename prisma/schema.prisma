@@ -2610,3 +2610,435 @@ model ImportRow {
   @@index([organizationId, importJobId, status])
   @@map("import_rows")
 }
+
+// ---------------------------------------------------------------------------
+// SOP Knowledge Base (Claude-grounded assistant)
+// See docs/sop-knowledge-base.md for design rationale.
+// ---------------------------------------------------------------------------
+
+enum SopApprovalStatus {
+  DRAFT
+  IN_REVIEW
+  APPROVED
+  SUPERSEDED
+  REJECTED
+}
+
+enum SopVisibility {
+  ALL_USERS
+  DEPARTMENT
+  MANAGER_PLUS
+  DIRECTOR_PLUS
+  ADMIN_ONLY
+}
+
+enum SopQueryOutcome {
+  ANSWERED
+  REFUSED
+  ESCALATED
+  PROVIDER_ERROR
+  REJECTED_BY_FILTER
+}
+
+enum SopEscalationStatus {
+  OPEN
+  ASSIGNED
+  RESOLVED_ANSWERED
+  RESOLVED_SOP_DRAFTED
+  RESOLVED_NO_ACTION
+  REASSIGNED
+}
+
+model SopDocument {
+  id                 String           @id @default(cuid())
+  organizationId     String
+  documentKey        String
+  title              String
+  category           String?
+  departmentId       String?
+  visibility         SopVisibility    @default(ALL_USERS)
+  safetyCritical     Boolean          @default(false)
+  qualityCritical    Boolean          @default(false)
+  customerImpacting  Boolean          @default(false)
+  ownerId            String?
+  summary            String?
+  status             String           @default("ACTIVE")
+  archivedAt         DateTime?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  createdById        String?
+  updatedById        String?
+
+  @@unique([organizationId, documentKey])
+  @@index([organizationId, departmentId, visibility])
+  @@map("sop_documents")
+}
+
+model SopDocumentVersion {
+  id                 String            @id @default(cuid())
+  organizationId     String
+  documentId         String
+  versionNumber      Int
+  approvalStatus     SopApprovalStatus @default(DRAFT)
+  rawText            String
+  changeSummary      String?
+  approvedById       String?
+  approvedAt         DateTime?
+  rejectedById       String?
+  rejectedAt         DateTime?
+  rejectionReason    String?
+  supersededAt       DateTime?
+  supersededById     String?
+  archivedAt         DateTime?
+  departmentId       String?
+  ownerId            String?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  createdById        String?
+  updatedById        String?
+
+  @@unique([organizationId, documentId, versionNumber])
+  @@index([organizationId, documentId, approvalStatus])
+  @@map("sop_document_versions")
+}
+
+model SopChunk {
+  id                 String   @id @default(cuid())
+  organizationId     String
+  documentId         String
+  documentVersionId  String
+  chunkIndex         Int
+  headingPath        String?
+  content            String
+  tokenCount         Int      @default(0)
+  embedding          Json?
+  searchVector       Unsupported("tsvector")?
+  departmentId       String?
+  ownerId            String?
+  archivedAt         DateTime?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  createdById        String?
+  updatedById        String?
+
+  @@unique([organizationId, documentVersionId, chunkIndex])
+  @@index([organizationId, documentId])
+  @@index([organizationId, documentVersionId])
+  @@map("sop_chunks")
+}
+
+model SopApproval {
+  id                String   @id @default(cuid())
+  organizationId    String
+  documentVersionId String
+  approverId        String
+  decision          String
+  reason            String?
+  decidedAt         DateTime @default(now())
+  departmentId      String?
+  ownerId           String?
+  archivedAt        DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  createdById       String?
+  updatedById       String?
+
+  @@index([organizationId, documentVersionId])
+  @@map("sop_approvals")
+}
+
+model SopQuery {
+  id                 String           @id @default(cuid())
+  organizationId     String
+  userId             String
+  departmentId       String?
+  questionRedacted   String
+  questionHash       String
+  retrievedChunkIds  Json
+  topScore           Float?
+  modelUsed          String?
+  outcome            SopQueryOutcome
+  confidence         Float?
+  answerShown        String?
+  triggers           Json?
+  inputTokens        Int?
+  outputTokens       Int?
+  cacheReadTokens    Int?
+  errorMessage       String?
+  ownerId            String?
+  archivedAt         DateTime?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  createdById        String?
+  updatedById        String?
+
+  @@index([organizationId, userId, createdAt])
+  @@index([organizationId, outcome, createdAt])
+  @@map("sop_queries")
+}
+
+model SopCitation {
+  id             String   @id @default(cuid())
+  organizationId String
+  queryId        String
+  chunkId        String
+  documentId     String
+  rank           Int
+  supports       String?
+  departmentId   String?
+  ownerId        String?
+  archivedAt     DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdById    String?
+  updatedById    String?
+
+  @@index([organizationId, queryId])
+  @@index([organizationId, chunkId])
+  @@map("sop_citations")
+}
+
+model SopEscalation {
+  id                 String              @id @default(cuid())
+  organizationId     String
+  queryId            String
+  userId             String
+  departmentId       String?
+  routedToUserId     String?
+  reasonSummary      String
+  triggers           Json
+  status             SopEscalationStatus @default(OPEN)
+  resolvedById       String?
+  resolvedAt         DateTime?
+  resolutionType     String?
+  resolutionNotes    String?
+  draftDocumentId    String?
+  ownerId            String?
+  archivedAt         DateTime?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  createdById        String?
+  updatedById        String?
+
+  @@unique([organizationId, queryId])
+  @@index([organizationId, routedToUserId, status])
+  @@index([organizationId, status, createdAt])
+  @@map("sop_escalations")
+}
+
+model AIActionLog {
+  id               String   @id @default(cuid())
+  organizationId   String
+  actorId          String?
+  action           String
+  provider         String
+  model            String
+  promptClass      String
+  inputTokens      Int      @default(0)
+  outputTokens     Int      @default(0)
+  cacheReadTokens  Int      @default(0)
+  redactionApplied Json?
+  citationCount    Int      @default(0)
+  confidence       Float?
+  outcome          String
+  requestId        String?
+  errorMessage     String?
+  departmentId     String?
+  ownerId          String?
+  archivedAt       DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  createdById      String?
+  updatedById      String?
+
+  @@index([organizationId, action, createdAt])
+  @@index([organizationId, actorId, createdAt])
+  @@map("ai_action_log")
+}
+
+// ---------------------------------------------------------------------------
+// Training & Assessments (QuizHub integration)
+// See docs/training-module.md for design rationale.
+// ---------------------------------------------------------------------------
+
+enum QuizStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum QuizAttemptStatus {
+  IN_PROGRESS
+  PASSED
+  FAILED
+  ABANDONED
+  EXPIRED
+}
+
+model QuestionBankCategory {
+  id             String   @id @default(cuid())
+  organizationId String
+  name           String
+  slug           String
+  description    String?
+  departmentId   String?
+  ownerId        String?
+  active         Boolean  @default(true)
+  archivedAt     DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdById    String?
+  updatedById    String?
+
+  @@unique([organizationId, slug])
+  @@index([organizationId, departmentId])
+  @@map("question_bank_categories")
+}
+
+model QuizQuestion {
+  id             String   @id @default(cuid())
+  organizationId String
+  categoryId     String?
+  departmentId   String?
+  prompt         String
+  explanation    String?
+  difficulty     String   @default("normal")
+  tags           Json?
+  safetyCritical Boolean  @default(false)
+  qualityCritical Boolean @default(false)
+  active         Boolean  @default(true)
+  archivedAt     DateTime?
+  ownerId        String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdById    String?
+  updatedById    String?
+
+  @@index([organizationId, categoryId])
+  @@index([organizationId, departmentId, active])
+  @@map("quiz_questions")
+}
+
+model QuizQuestionOption {
+  id             String   @id @default(cuid())
+  organizationId String
+  questionId     String
+  label          String
+  isCorrect      Boolean  @default(false)
+  sortOrder      Int      @default(0)
+  archivedAt     DateTime?
+  departmentId   String?
+  ownerId        String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdById    String?
+  updatedById    String?
+
+  @@index([organizationId, questionId])
+  @@map("quiz_question_options")
+}
+
+model QuizDefinition {
+  id              String     @id @default(cuid())
+  organizationId  String
+  slug            String
+  title           String
+  description     String?
+  departmentId    String?
+  categoryId      String?
+  status          QuizStatus @default(DRAFT)
+  questionCount   Int        @default(10)
+  pickStrategy    String     @default("random_balanced")
+  passThreshold   Int        @default(80)
+  timeLimitMins   Int?
+  ownerId         String?
+  active          Boolean    @default(true)
+  archivedAt      DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  createdById     String?
+  updatedById     String?
+
+  @@unique([organizationId, slug])
+  @@index([organizationId, departmentId, status])
+  @@map("quiz_definitions")
+}
+
+model QuizShareLink {
+  id             String    @id @default(cuid())
+  organizationId String
+  quizId         String
+  token          String
+  label          String?
+  createdByUserId String
+  expiresAt      DateTime?
+  active         Boolean   @default(true)
+  usageCount     Int       @default(0)
+  ownerId        String?
+  departmentId   String?
+  archivedAt     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  createdById    String?
+  updatedById    String?
+
+  @@unique([organizationId, token])
+  @@index([organizationId, quizId, active])
+  @@map("quiz_share_links")
+}
+
+model QuizAttempt {
+  id                  String            @id @default(cuid())
+  organizationId      String
+  quizId              String
+  shareLinkId         String?
+  participantUserId   String?
+  participantName     String
+  participantEmployeeId String?
+  participantDepartmentId String?
+  participantManagerId    String?
+  status              QuizAttemptStatus @default(IN_PROGRESS)
+  scorePercent        Int?
+  correctCount        Int               @default(0)
+  totalCount          Int               @default(0)
+  startedAt           DateTime          @default(now())
+  completedAt         DateTime?
+  certificateNumber   String?
+  ipAddress           String?
+  userAgent           String?
+  ownerId             String?
+  departmentId        String?
+  archivedAt          DateTime?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  createdById         String?
+  updatedById         String?
+
+  @@unique([organizationId, certificateNumber])
+  @@index([organizationId, quizId, status])
+  @@index([organizationId, participantUserId, createdAt])
+  @@index([organizationId, participantDepartmentId, createdAt])
+  @@map("quiz_attempts")
+}
+
+model QuizAttemptAnswer {
+  id              String   @id @default(cuid())
+  organizationId  String
+  attemptId       String
+  questionId      String
+  selectedOptionId String?
+  freeTextAnswer  String?
+  correct         Boolean  @default(false)
+  scoredAt        DateTime @default(now())
+  departmentId    String?
+  ownerId         String?
+  archivedAt      DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  createdById     String?
+  updatedById     String?
+
+  @@unique([organizationId, attemptId, questionId])
+  @@index([organizationId, attemptId])
+  @@map("quiz_attempt_answers")
+}

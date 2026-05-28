@@ -39,7 +39,19 @@ export const PERMISSIONS = [
   ["note:manage", "Manage manager notes and follow-ups"],
   ["announcement:manage", "Manage announcements"],
   ["admin:manage", "Manage global settings"],
-  ["audit:view", "View audit log"]
+  ["audit:view", "View audit log"],
+  ["sop:ask", "Ask the SOP Knowledge Base assistant"],
+  ["sop:author", "Author SOP drafts"],
+  ["sop:approve", "Approve SOP versions"],
+  ["sop:admin", "Manage the SOP document lifecycle"],
+  ["sop:escalation:resolve", "Resolve SOP escalations"],
+  ["ai:use", "Use AI-powered features"],
+  ["ai:audit", "View AI action audit log"],
+  ["quiz:take", "Take training quizzes"],
+  ["quiz:launch", "Launch quizzes and create share links"],
+  ["quiz:author", "Author quizzes and bank questions"],
+  ["quiz:insights", "View quiz insights and reports"],
+  ["quiz:admin", "Administer training assessments"]
 ] as const;
 
 export type PermissionKey = (typeof PERMISSIONS)[number][0];
@@ -57,7 +69,10 @@ const levelPermissions: Record<UserLevel, PermissionKey[]> = {
     "attendance:create",
     "erp:view",
     "task:view",
-    "file:upload"
+    "file:upload",
+    "sop:ask",
+    "ai:use",
+    "quiz:take"
   ],
   MANAGER: [
     "dashboard:view",
@@ -88,7 +103,15 @@ const levelPermissions: Record<UserLevel, PermissionKey[]> = {
     "file:upload",
     "note:view",
     "note:manage",
-    "announcement:manage"
+    "announcement:manage",
+    "sop:ask",
+    "sop:author",
+    "sop:escalation:resolve",
+    "ai:use",
+    "quiz:take",
+    "quiz:launch",
+    "quiz:author",
+    "quiz:insights"
   ],
   DIRECTOR: [
     "dashboard:view",
@@ -124,7 +147,17 @@ const levelPermissions: Record<UserLevel, PermissionKey[]> = {
     "file:upload",
     "note:view",
     "note:manage",
-    "announcement:manage"
+    "announcement:manage",
+    "sop:ask",
+    "sop:author",
+    "sop:approve",
+    "sop:escalation:resolve",
+    "ai:use",
+    "ai:audit",
+    "quiz:take",
+    "quiz:launch",
+    "quiz:author",
+    "quiz:insights"
   ],
   ADMIN: PERMISSIONS.map(([key]) => key)
 };
