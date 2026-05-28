@@ -285,6 +285,21 @@ export const erpManufacturingQuoteCreateSchema = z.object({
   exportControlFlag: z.coerce.boolean().optional()
 });
 
+// Cycle-time lookup upsert payload. The bucket fields (material,
+// process, complexity, diameter) are the unique key — POSTs upsert
+// against an existing row when the bucket matches.
+export const erpCycleTimeLookupSchema = z.object({
+  materialCategory: materialCategory,
+  process: manufacturingProcess,
+  complexityClass: complexityClass,
+  diameterClass: diameterClass.default("NOT_APPLICABLE"),
+  estimatedSetupHours: z.coerce.number().min(0).max(999),
+  estimatedCycleMinutes: z.coerce.number().min(0).max(99_999),
+  sampleSize: z.coerce.number().int().min(0).max(1_000_000).optional(),
+  confidenceScore: z.coerce.number().min(0).max(1).optional(),
+  notes: optionalText
+});
+
 export const erpSalesOrderCreateSchema = z.object({
   orderNumber: z.string().trim().min(1).max(60).optional(),
   customerId: optionalId,

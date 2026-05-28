@@ -183,6 +183,11 @@ export default async function QuotesPage({
           </p>
         </div>
         <div className="actions">
+          {user.permissions.includes("cycletime:view") ? (
+            <Link className="button" href="/erp/quotes/cycle-times">
+              Cycle-time lookups
+            </Link>
+          ) : null}
           {user.permissions.includes("quote:create") ? (
             <Link className="button primary" href="/erp/quotes/new">
               + Manufacturing quote
