@@ -208,6 +208,83 @@ export const erpQuoteCreateSchema = z.object({
   notes: optionalText
 });
 
+const materialCategory = z.enum([
+  "ALLOY_STEEL",
+  "STAINLESS_STEEL",
+  "CARBON_STEEL",
+  "ALUMINUM",
+  "TITANIUM",
+  "BRASS",
+  "COPPER",
+  "NICKEL_ALLOY",
+  "PLASTIC",
+  "COMPOSITE",
+  "OTHER"
+]);
+
+const manufacturingProcess = z.enum([
+  "TURNING",
+  "MILLING",
+  "MULTI_SPINDLE",
+  "SWISS_TURNING",
+  "GRINDING",
+  "EDM",
+  "WIRE_EDM",
+  "HONING",
+  "LAPPING",
+  "INSPECTION",
+  "ASSEMBLY",
+  "OTHER"
+]);
+
+const complexityClass = z.enum(["SIMPLE", "MODERATE", "COMPLEX", "HIGHLY_COMPLEX"]);
+
+const diameterClass = z.enum([
+  "UNDER_25_MM",
+  "FROM_25_TO_75_MM",
+  "FROM_75_TO_150_MM",
+  "FROM_150_TO_300_MM",
+  "OVER_300_MM",
+  "NOT_APPLICABLE"
+]);
+
+// Manufacturing-aware quote intake. Creates one Quote + one QuoteLine
+// in the same transaction with cycle / setup / cost snapshots captured.
+export const erpManufacturingQuoteCreateSchema = z.object({
+  customerId: optionalId,
+  title: z.string().trim().min(3).max(180),
+  dueDate: optionalDate,
+  validUntil: optionalDate,
+  priority: z.enum(["LOW", "NORMAL", "HIGH", "URGENT", "WORK_STOPPAGE"]).default("NORMAL"),
+  notes: optionalText,
+
+  // Part / line metadata
+  partNumber: z.string().trim().max(60).optional(),
+  partDescription: z.string().trim().min(3).max(500),
+  revision: z.string().trim().max(20).optional(),
+  quantity: z.coerce.number().int().min(1).max(1_000_000),
+
+  // Manufacturing bucket — drives cycle-time lookup.
+  materialCategory: materialCategory,
+  process: manufacturingProcess,
+  complexityClass: complexityClass,
+  diameterClass: diameterClass.default("NOT_APPLICABLE"),
+
+  // Cost snapshots. All optional — the operator can override the lookup
+  // estimate, leave blank to use the lookup, or fill in all fields manually
+  // when there is no matching lookup row.
+  setupHours: optionalMoney,
+  cycleMinutesPerPiece: optionalMoney,
+  materialCostPerUnit: optionalMoney,
+  laborRatePerHour: optionalMoney,
+  burdenRatePerHour: optionalMoney,
+  marginPercent: z.coerce.number().min(0).max(95).optional(),
+
+  cycleTimeLookupId: optionalId,
+  routingNotes: optionalText,
+  exportControlFlag: z.coerce.boolean().optional()
+});
+
 export const erpSalesOrderCreateSchema = z.object({
   orderNumber: z.string().trim().min(1).max(60).optional(),
   customerId: optionalId,

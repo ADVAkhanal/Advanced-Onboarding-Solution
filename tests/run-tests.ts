@@ -4,6 +4,7 @@ import { GET as healthGet } from "../src/app/api/health/route";
 import { redactProhibited } from "../src/lib/ai/redaction";
 import { chunkSopText } from "../src/lib/ai/chunker";
 import { __testHooks } from "../src/lib/ai/sop-answerer";
+import { estimateLine } from "../src/lib/quoting";
 
 const mode = process.argv[2] ?? "all";
 
@@ -46,6 +47,82 @@ async function runUnit() {
   // Answerer gates
   assert.ok(__testHooks.CONFIDENCE_FLOOR >= 0.6);
   assert.ok(__testHooks.SYSTEM_PROMPT.includes("ONLY"));
+
+  // Quote permissions
+  assert.equal(can("USER", "quote:view"), true);
+  assert.equal(can("USER", "quote:create"), false);
+  assert.equal(can("MANAGER", "quote:create"), true);
+  assert.equal(can("MANAGER", "quote:submit"), false);
+  assert.equal(can("DIRECTOR", "quote:submit"), true);
+  assert.equal(can("DIRECTOR", "cycletime:manage"), true);
+  assert.equal(can("MANAGER", "cycletime:manage"), false);
+  assert.equal(permissionsForLevel("ADMIN").includes("quote:admin"), true);
+
+  // Quoting math — load-bearing for the entire quoting flow.
+  // Zero-margin: total equals subtotal, unitPrice = total / quantity.
+  const noMargin = estimateLine({
+    quantity: 10,
+    setupHours: 2,
+    cycleMinutesPerPiece: 6,
+    materialCostPerUnit: 5,
+    laborRatePerHour: 60,
+    burdenRatePerHour: 40,
+    marginPercent: 0
+  });
+  // 2h setup + 60min cycle (10 * 6 / 60 = 1h) = 3h. Labor 180, burden 120, material 50.
+  assert.equal(noMargin.totalHours, 3);
+  assert.equal(noMargin.laborCost, 180);
+  assert.equal(noMargin.burdenCost, 120);
+  assert.equal(noMargin.materialCost, 50);
+  assert.equal(noMargin.subtotal, 350);
+  assert.equal(noMargin.marginAmount, 0);
+  assert.equal(noMargin.total, 350);
+  assert.equal(noMargin.unitPrice, 35);
+
+  // 25% margin: total = subtotal / (1 - 0.25) so margin is 25% of total.
+  const withMargin = estimateLine({
+    quantity: 4,
+    setupHours: 1,
+    cycleMinutesPerPiece: 15,
+    materialCostPerUnit: 10,
+    laborRatePerHour: 50,
+    burdenRatePerHour: 30,
+    marginPercent: 25
+  });
+  // 1h setup + 1h cycle = 2h. Labor 100, burden 60, material 40. Subtotal 200.
+  assert.equal(withMargin.subtotal, 200);
+  // total = 200 / 0.75 = 266.6666... → rounded to 2 = 266.67
+  assert.equal(withMargin.total, 266.67);
+  assert.equal(withMargin.marginAmount, 66.67);
+  // unitPrice derived from UNROUNDED total: 266.6666... / 4 = 66.6666... → rounded(4) = 66.6667
+  assert.equal(withMargin.unitPrice, 66.6667);
+
+  // Margin clamped at 95% — a 100% margin input must not divide by zero.
+  const clampedMargin = estimateLine({
+    quantity: 1,
+    setupHours: 0,
+    cycleMinutesPerPiece: 0,
+    materialCostPerUnit: 100,
+    laborRatePerHour: 0,
+    burdenRatePerHour: 0,
+    marginPercent: 100
+  });
+  // 100% input → clamped to 95%. total = 100 / (1 - 0.95) = 2000.
+  assert.equal(clampedMargin.subtotal, 100);
+  assert.equal(clampedMargin.total, 2000);
+
+  // Zero quantity must not divide by zero in unitPrice.
+  const zeroQty = estimateLine({
+    quantity: 0,
+    setupHours: 1,
+    cycleMinutesPerPiece: 10,
+    materialCostPerUnit: 5,
+    laborRatePerHour: 50,
+    burdenRatePerHour: 25,
+    marginPercent: 20
+  });
+  assert.equal(zeroQty.unitPrice, 0);
+  assert.equal(zeroQty.materialCost, 0);
 }
 
 async function runIntegration() {

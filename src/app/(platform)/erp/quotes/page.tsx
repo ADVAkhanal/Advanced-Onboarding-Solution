@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requirePermission } from "@/lib/auth";
 import { decimalText, formatShortDate, getErpReferenceData } from "@/lib/erp-data";
@@ -20,7 +21,20 @@ export default async function QuotesPage() {
 
   return (
     <>
-      <div className="page-head"><div><p className="eyebrow">Sales Operations</p><h1>Quotes & Orders</h1><p className="subhead">Quote tracking, customer order handoff, safe estimated values, due dates, ownership, and status visibility without payment processing.</p></div></div>
+      <div className="page-head">
+        <div>
+          <p className="eyebrow">Sales Operations</p>
+          <h1>Quotes &amp; Orders</h1>
+          <p className="subhead">Quote tracking, customer order handoff, safe estimated values, due dates, ownership, and status visibility without payment processing.</p>
+        </div>
+        <div className="actions">
+          {user.permissions.includes("quote:create") ? (
+            <Link className="button primary" href="/erp/quotes/new">
+              + Manufacturing quote
+            </Link>
+          ) : null}
+        </div>
+      </div>
       <div className="grid two-col">
         <ErpCreateForm title="Create Quote" endpoint="/api/erp/quotes" fields={[
           { name: "customerId", label: "Customer", type: "select", options: customerOptions },
