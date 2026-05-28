@@ -51,7 +51,14 @@ export const PERMISSIONS = [
   ["quiz:launch", "Launch quizzes and create share links"],
   ["quiz:author", "Author quizzes and bank questions"],
   ["quiz:insights", "View quiz insights and reports"],
-  ["quiz:admin", "Administer training assessments"]
+  ["quiz:admin", "Administer training assessments"],
+  ["quote:view", "View quotes within scope"],
+  ["quote:create", "Create quote drafts"],
+  ["quote:price", "Apply pricing, margins, and approve quote totals"],
+  ["quote:submit", "Submit quotes to customers"],
+  ["quote:admin", "Administer quote settings and templates"],
+  ["cycletime:view", "View cycle-time lookup tables"],
+  ["cycletime:manage", "Maintain cycle-time lookup tables"]
 ] as const;
 
 export type PermissionKey = (typeof PERMISSIONS)[number][0];
@@ -72,7 +79,8 @@ const levelPermissions: Record<UserLevel, PermissionKey[]> = {
     "file:upload",
     "sop:ask",
     "ai:use",
-    "quiz:take"
+    "quiz:take",
+    "quote:view"
   ],
   MANAGER: [
     "dashboard:view",
@@ -111,7 +119,11 @@ const levelPermissions: Record<UserLevel, PermissionKey[]> = {
     "quiz:take",
     "quiz:launch",
     "quiz:author",
-    "quiz:insights"
+    "quiz:insights",
+    "quote:view",
+    "quote:create",
+    "quote:price",
+    "cycletime:view"
   ],
   DIRECTOR: [
     "dashboard:view",
@@ -157,7 +169,13 @@ const levelPermissions: Record<UserLevel, PermissionKey[]> = {
     "quiz:take",
     "quiz:launch",
     "quiz:author",
-    "quiz:insights"
+    "quiz:insights",
+    "quote:view",
+    "quote:create",
+    "quote:price",
+    "quote:submit",
+    "cycletime:view",
+    "cycletime:manage"
   ],
   ADMIN: PERMISSIONS.map(([key]) => key)
 };
