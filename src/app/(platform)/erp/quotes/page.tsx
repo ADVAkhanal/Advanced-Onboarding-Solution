@@ -114,9 +114,13 @@ export default async function QuotesPage({
       header: "Quote",
       width: "180px",
       render: (row) => (
-        <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 700 }}>
+        <Link
+          href={`/erp/quotes/${row.id}`}
+          className="link"
+          style={{ fontVariantNumeric: "tabular-nums", fontWeight: 700 }}
+        >
           {row.quoteNumber}
-        </span>
+        </Link>
       )
     },
     {
