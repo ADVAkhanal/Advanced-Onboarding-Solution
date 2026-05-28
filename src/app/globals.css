@@ -1095,3 +1095,358 @@ h3 {
     min-height: 280px;
   }
 }
+
+/* ------------------------------------------------------------------------ */
+/* Motion layer                                                              */
+/* Transform + opacity only. All durations < 400ms. Respects reduced-motion. */
+/* ------------------------------------------------------------------------ */
+
+:root {
+  --motion-fast: 160ms;
+  --motion-base: 280ms;
+  --motion-slow: 380ms;
+  --motion-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --motion-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes motion-fade-up {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes motion-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes motion-slide-in-left {
+  from {
+    opacity: 0;
+    transform: translate3d(-14px, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes motion-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.03);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes motion-shimmer {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+
+@keyframes motion-pulse-soft {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@keyframes motion-progress-stripes {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 28px 0;
+  }
+}
+
+/* Entrance helpers — drop on any block to animate it in once. */
+.motion-fade-up {
+  animation: motion-fade-up var(--motion-base) var(--motion-ease) both;
+}
+.motion-fade-in {
+  animation: motion-fade-in var(--motion-base) var(--motion-ease) both;
+}
+.motion-slide-in {
+  animation: motion-slide-in-left var(--motion-base) var(--motion-ease) both;
+}
+.motion-pop {
+  animation: motion-pop var(--motion-slow) var(--motion-spring) both;
+}
+
+/* Stagger — set --motion-index on parent or child to delay entry. */
+.motion-stagger > * {
+  animation: motion-fade-up var(--motion-base) var(--motion-ease) both;
+}
+.motion-stagger > *:nth-child(1) {
+  animation-delay: 0ms;
+}
+.motion-stagger > *:nth-child(2) {
+  animation-delay: 60ms;
+}
+.motion-stagger > *:nth-child(3) {
+  animation-delay: 120ms;
+}
+.motion-stagger > *:nth-child(4) {
+  animation-delay: 180ms;
+}
+.motion-stagger > *:nth-child(5) {
+  animation-delay: 240ms;
+}
+.motion-stagger > *:nth-child(6) {
+  animation-delay: 300ms;
+}
+.motion-stagger > *:nth-child(n + 7) {
+  animation-delay: 360ms;
+}
+
+/* Standard interactive transitions on common surfaces. */
+.card {
+  transition:
+    transform var(--motion-base) var(--motion-ease),
+    box-shadow var(--motion-base) var(--motion-ease),
+    border-color var(--motion-fast) var(--motion-ease);
+}
+a.card:hover,
+.card.card-interactive:hover {
+  transform: translate3d(0, -2px, 0);
+  box-shadow:
+    0 22px 56px rgba(10, 27, 50, 0.12),
+    0 4px 10px rgba(10, 27, 50, 0.06);
+}
+
+.button {
+  transition:
+    transform var(--motion-fast) var(--motion-ease),
+    box-shadow var(--motion-fast) var(--motion-ease),
+    background var(--motion-fast) var(--motion-ease),
+    color var(--motion-fast) var(--motion-ease);
+}
+.button:hover {
+  transform: translate3d(0, -1px, 0);
+}
+.button:active {
+  transform: translate3d(0, 0, 0) scale(0.98);
+}
+.button:disabled {
+  transform: none;
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.pill {
+  transition:
+    transform var(--motion-fast) var(--motion-ease),
+    background var(--motion-fast) var(--motion-ease);
+}
+
+.nav-item {
+  transition:
+    background var(--motion-fast) var(--motion-ease),
+    transform var(--motion-fast) var(--motion-ease),
+    color var(--motion-fast) var(--motion-ease);
+}
+.nav-item:hover {
+  transform: translate3d(2px, 0, 0);
+}
+
+.page-head {
+  animation: motion-fade-up var(--motion-base) var(--motion-ease) both;
+}
+
+/* Shimmer loading bar — drop class motion-shimmer on a fixed-height block. */
+.motion-shimmer-bar {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(
+    90deg,
+    rgba(0, 110, 245, 0.08) 0%,
+    rgba(0, 183, 255, 0.18) 50%,
+    rgba(0, 110, 245, 0.08) 100%
+  );
+  background-size: 200px 100%;
+  background-repeat: no-repeat;
+  animation: motion-shimmer 1.4s var(--motion-ease-out) infinite;
+  border-radius: 6px;
+  height: 10px;
+}
+
+/* SOP-specific helpers */
+.sop-answer {
+  animation: motion-fade-up var(--motion-slow) var(--motion-ease) both;
+}
+
+.sop-citation {
+  animation: motion-slide-in-left var(--motion-base) var(--motion-ease) both;
+}
+.sop-citation:nth-child(1) {
+  animation-delay: 80ms;
+}
+.sop-citation:nth-child(2) {
+  animation-delay: 140ms;
+}
+.sop-citation:nth-child(3) {
+  animation-delay: 200ms;
+}
+.sop-citation:nth-child(4) {
+  animation-delay: 260ms;
+}
+.sop-citation:nth-child(n + 5) {
+  animation-delay: 320ms;
+}
+
+.sop-escalation,
+.sop-refusal,
+.sop-error {
+  animation: motion-fade-up var(--motion-base) var(--motion-ease) both;
+}
+
+/* Generic spinner — use as <span class="motion-spinner" aria-hidden="true" /> */
+.motion-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(0, 110, 245, 0.18);
+  border-top-color: var(--blue);
+  animation: motion-spin 720ms linear infinite;
+  vertical-align: -2px;
+  margin-right: 6px;
+}
+@keyframes motion-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Quiz runner */
+.quiz-progress {
+  position: relative;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(0, 110, 245, 0.12);
+  overflow: hidden;
+  margin: 12px 0 20px;
+}
+.quiz-progress-fill {
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(
+      45deg,
+      rgba(255, 255, 255, 0.18) 0,
+      rgba(255, 255, 255, 0.18) 8px,
+      transparent 8px,
+      transparent 16px
+    ),
+    linear-gradient(90deg, var(--blue), var(--cyan));
+  background-size:
+    28px 100%,
+    100% 100%;
+  border-radius: 999px;
+  animation: motion-progress-stripes 1.4s linear infinite;
+  transition: width var(--motion-slow) var(--motion-ease);
+}
+
+.quiz-question-card {
+  animation: motion-fade-up var(--motion-base) var(--motion-ease) both;
+}
+.quiz-question-card:nth-child(1) {
+  animation-delay: 0ms;
+}
+.quiz-question-card:nth-child(2) {
+  animation-delay: 60ms;
+}
+.quiz-question-card:nth-child(3) {
+  animation-delay: 120ms;
+}
+.quiz-question-card:nth-child(4) {
+  animation-delay: 180ms;
+}
+.quiz-question-card:nth-child(n + 5) {
+  animation-delay: 240ms;
+}
+
+.quiz-option {
+  transition:
+    background var(--motion-fast) var(--motion-ease),
+    border-color var(--motion-fast) var(--motion-ease),
+    transform var(--motion-fast) var(--motion-ease);
+}
+.quiz-option:hover {
+  transform: translate3d(2px, 0, 0);
+}
+.quiz-option--selected {
+  background: rgba(0, 110, 245, 0.06);
+  border-color: var(--blue);
+}
+
+.quiz-result {
+  animation: motion-pop var(--motion-slow) var(--motion-spring) both;
+}
+
+.quiz-result--passed .quiz-result-badge,
+.quiz-result--failed .quiz-result-badge {
+  display: inline-block;
+  animation: motion-pop 520ms var(--motion-spring) both;
+  animation-delay: 120ms;
+}
+
+/* Pills get a subtle pulse when they signal an open/urgent state. */
+.pill.amber,
+.pill.red {
+  animation: motion-pulse-soft 2.4s var(--motion-ease) infinite;
+}
+
+/* Tabs + segmented controls */
+.tabs .button {
+  position: relative;
+}
+.tabs .button.primary::after {
+  content: "";
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: -6px;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--blue), var(--cyan));
+  animation: motion-fade-in var(--motion-fast) var(--motion-ease) both;
+}
+
+/* Respect users who prefer reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}
