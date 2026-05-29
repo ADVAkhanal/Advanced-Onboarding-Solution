@@ -1,12 +1,24 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { CircleDollarSign, Clock, FileText, Trophy } from "lucide-react";
 import { requirePermission } from "@/lib/auth";
 import { decimalText, formatShortDate, getErpReferenceData } from "@/lib/erp-data";
 import { prisma } from "@/lib/prisma";
 import { ErpCreateForm } from "@/components/erp-create-form";
 import { DataTable, type Column } from "@/components/data-table";
+import { KpiCard } from "@/components/kpi-card";
 
 export const dynamic = "force-dynamic";
+
+const OPEN_STATUSES = ["DRAFT", "QUOTED", "ON_HOLD"];
+
+function formatUsd(value: number): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0
+  }).format(value);
+}
 
 const STATUS_FILTERS: Array<{ value: string; label: string }> = [
   { value: "ALL", label: "All" },
@@ -44,7 +56,10 @@ export default async function QuotesPage({
     ? requestedStatus
     : "ALL";
 
-  const [quotes, orders] = await Promise.all([
+  // KPI aggregates are org-wide and independent of the status filter, so
+  // they are computed with their own queries rather than from the (capped,
+  // filtered) row list below.
+  const [quotes, orders, statusCounts, openValueAgg] = await Promise.all([
     prisma.quote.findMany({
       where: {
         organizationId: user.organizationId,
@@ -58,8 +73,39 @@ export default async function QuotesPage({
       where: { organizationId: user.organizationId, archivedAt: null },
       orderBy: [{ promisedDate: "asc" }, { updatedAt: "desc" }],
       take: 100
+    }),
+    prisma.quote.groupBy({
+      by: ["status"],
+      where: { organizationId: user.organizationId, archivedAt: null },
+      _count: { _all: true }
+    }),
+    prisma.quote.aggregate({
+      where: {
+        organizationId: user.organizationId,
+        archivedAt: null,
+        status: { in: OPEN_STATUSES }
+      },
+      _sum: { estimatedValue: true }
     })
   ]);
+
+  // KPI computation.
+  const countByStatus = new Map(statusCounts.map((row) => [row.status, row._count._all]));
+  const wonCount = countByStatus.get("WON") ?? 0;
+  const lostCount = countByStatus.get("LOST") ?? 0;
+  const decided = wonCount + lostCount;
+  const winRate = decided > 0 ? Math.round((wonCount / decided) * 100) : null;
+  const openValue = openValueAgg._sum.estimatedValue ? Number(openValueAgg._sum.estimatedValue) : 0;
+  const openCount = OPEN_STATUSES.reduce((sum, s) => sum + (countByStatus.get(s) ?? 0), 0);
+
+  const overdueCount = await prisma.quote.count({
+    where: {
+      organizationId: user.organizationId,
+      archivedAt: null,
+      status: { in: ["DRAFT", "QUOTED"] },
+      dueDate: { lt: new Date() }
+    }
+  });
 
   // Quote ↔ QuoteLine has no Prisma relation defined (loose FK column),
   // so count lines via groupBy on the quoteId. Scoped to the org for safety.
@@ -194,6 +240,37 @@ export default async function QuotesPage({
             </Link>
           ) : null}
         </div>
+      </div>
+
+      <div className="grid four-col" style={{ marginBottom: 14 }}>
+        <KpiCard
+          label="Open quote value"
+          value={formatUsd(openValue)}
+          note={`${openCount} open ${openCount === 1 ? "quote" : "quotes"}`}
+          icon={CircleDollarSign}
+          tone="blue"
+        />
+        <KpiCard
+          label="Win rate"
+          value={winRate === null ? "—" : `${winRate}%`}
+          note={winRate === null ? "No decided quotes yet" : `${wonCount} won · ${lostCount} lost`}
+          icon={Trophy}
+          tone={winRate !== null && winRate >= 50 ? "green" : "amber"}
+        />
+        <KpiCard
+          label="Overdue quotes"
+          value={overdueCount}
+          note="Past due, still open"
+          icon={Clock}
+          tone={overdueCount > 0 ? "red" : "green"}
+        />
+        <KpiCard
+          label="Total quotes"
+          value={Array.from(countByStatus.values()).reduce((a, b) => a + b, 0)}
+          note="All statuses"
+          icon={FileText}
+          tone="blue"
+        />
       </div>
 
       <div className="toolbar toolbar-between" style={{ marginBottom: 14 }}>
