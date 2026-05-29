@@ -1,101 +1,12 @@
-import type {
-  ComplexityClass,
-  DiameterClass,
-  ManufacturingProcess,
-  MaterialCategory,
-  Prisma
-} from "@prisma/client";
 import { requirePermission } from "@/lib/auth";
 import { recordAudit } from "@/lib/audit";
-import { aggregateActuals } from "@/lib/cycle-time-aggregation";
 import { assertNoProhibitedFields } from "@/lib/data-boundary";
 import { handleRouteError, ok } from "@/lib/http";
+import { type CycleBucket, recomputeLookupFromActuals } from "@/lib/job-actuals";
 import { prisma } from "@/lib/prisma";
 import { erpJobActualCreateSchema } from "@/lib/validators";
 
 export const dynamic = "force-dynamic";
-
-type TxClient = Prisma.TransactionClient;
-
-type Bucket = {
-  materialCategory: MaterialCategory;
-  process: ManufacturingProcess;
-  complexityClass: ComplexityClass;
-  diameterClass: DiameterClass;
-};
-
-/**
- * Recompute the CycleTimeLookup for a bucket from all non-excluded,
- * non-archived JobActuals in that bucket, and upsert it as DERIVED.
- *
- * Runs inside the caller's transaction so the actual and the recomputed
- * lookup commit atomically. Returns the upserted lookup, or null when
- * there are no usable actuals (lookup left untouched).
- */
-export async function recomputeLookupFromActuals(
-  tx: TxClient,
-  organizationId: string,
-  bucket: Bucket,
-  actorId: string
-) {
-  const actuals = await tx.jobActual.findMany({
-    where: {
-      organizationId,
-      archivedAt: null,
-      excludedFromAggregation: false,
-      ...bucket
-    },
-    select: {
-      quantity: true,
-      actualSetupHours: true,
-      actualCycleMinutesPerPiece: true
-    }
-  });
-
-  const aggregate = aggregateActuals(
-    actuals.map((a) => ({
-      quantity: a.quantity,
-      actualSetupHours: Number(a.actualSetupHours),
-      actualCycleMinutesPerPiece: Number(a.actualCycleMinutesPerPiece)
-    }))
-  );
-
-  if (!aggregate) {
-    return null;
-  }
-
-  return tx.cycleTimeLookup.upsert({
-    where: {
-      organizationId_materialCategory_process_complexityClass_diameterClass: {
-        organizationId,
-        ...bucket
-      }
-    },
-    create: {
-      organizationId,
-      ...bucket,
-      estimatedSetupHours: aggregate.estimatedSetupHours,
-      estimatedCycleMinutes: aggregate.estimatedCycleMinutes,
-      sampleSize: aggregate.sampleSize,
-      confidenceScore: aggregate.confidenceScore,
-      source: "DERIVED",
-      lastReviewedAt: new Date(),
-      reviewedById: actorId,
-      createdById: actorId,
-      updatedById: actorId
-    },
-    update: {
-      estimatedSetupHours: aggregate.estimatedSetupHours,
-      estimatedCycleMinutes: aggregate.estimatedCycleMinutes,
-      sampleSize: aggregate.sampleSize,
-      confidenceScore: aggregate.confidenceScore,
-      source: "DERIVED",
-      lastReviewedAt: new Date(),
-      reviewedById: actorId,
-      updatedById: actorId
-    }
-  });
-}
 
 export async function POST(request: Request) {
   try {
@@ -105,7 +16,7 @@ export async function POST(request: Request) {
     assertNoProhibitedFields(raw);
     const body = erpJobActualCreateSchema.parse(raw);
 
-    const bucket: Bucket = {
+    const bucket: CycleBucket = {
       materialCategory: body.materialCategory,
       process: body.process,
       complexityClass: body.complexityClass,

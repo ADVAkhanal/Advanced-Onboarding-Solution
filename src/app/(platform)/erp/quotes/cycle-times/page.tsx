@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { complexityLabel, diameterLabel, materialLabel, processLabel } from "@/lib/quoting";
 import { DataTable, type Column } from "@/components/data-table";
 import { CycleTimeUpsertForm } from "./upsert-form";
+import { LogActualForm } from "./log-actual-form";
 
 export const dynamic = "force-dynamic";
 
@@ -19,12 +20,20 @@ type LookupRow = {
   estimatedCycleMinutes: number;
   sampleSize: number;
   confidenceScore: number | null;
+  source: string;
   lastReviewedAt: Date | null;
 };
+
+function sourceBadge(source: string): { className: string; label: string } {
+  if (source === "DERIVED") return { className: "pill green", label: "Derived" };
+  if (source === "SEED") return { className: "pill amber", label: "Seed" };
+  return { className: "pill", label: "Manual" };
+}
 
 export default async function CycleTimeAdminPage() {
   const user = await requirePermission("cycletime:view");
   const canManage = user.permissions.includes("cycletime:manage");
+  const canRecord = user.permissions.includes("jobactual:record");
 
   const lookups = await prisma.cycleTimeLookup.findMany({
     where: {
@@ -60,6 +69,7 @@ export default async function CycleTimeAdminPage() {
       estimatedCycleMinutes: Number(lookup.estimatedCycleMinutes),
       sampleSize: lookup.sampleSize,
       confidenceScore: lookup.confidenceScore ? Number(lookup.confidenceScore) : null,
+      source: lookup.source,
       lastReviewedAt: lookup.lastReviewedAt
     };
   });
@@ -116,12 +126,23 @@ export default async function CycleTimeAdminPage() {
       }
     },
     {
+      key: "source",
+      header: "Source",
+      width: "100px",
+      render: (row) => {
+        const badge = sourceBadge(row.source);
+        return <span className={badge.className}>{badge.label}</span>;
+      }
+    },
+    {
       key: "reviewed",
       header: "Reviewed",
       width: "130px",
       render: (row) => formatShortDate(row.lastReviewedAt)
     }
   ];
+
+  const derivedCount = rows.filter((r) => r.source === "DERIVED").length;
 
   return (
     <>
@@ -132,7 +153,10 @@ export default async function CycleTimeAdminPage() {
           <p className="subhead">
             Historical setup / cycle estimates per material × process × complexity × diameter
             bucket. The manufacturing intake form pre-fills setup and cycle minutes from these
-            rows when a bucket matches. {canManage ? "Edit or add rows below." : "Read-only view — director or admin to edit."}
+            rows when a bucket matches.{" "}
+            {derivedCount > 0
+              ? `${derivedCount} estimate${derivedCount === 1 ? " is" : "s are"} derived from logged job actuals.`
+              : "Log job actuals below to start deriving estimates from real history."}
           </p>
         </div>
         <div className="actions">
@@ -157,6 +181,12 @@ export default async function CycleTimeAdminPage() {
           />
         </div>
       </section>
+
+      {canRecord ? (
+        <div style={{ marginTop: 14 }}>
+          <LogActualForm />
+        </div>
+      ) : null}
 
       {canManage ? (
         <div style={{ marginTop: 14 }}>
