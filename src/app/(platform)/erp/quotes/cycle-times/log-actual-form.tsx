@@ -48,15 +48,58 @@ const DIAMETERS: Array<[string, string]> = [
   ["OVER_300_MM", "Over 300 mm"]
 ];
 
+type WorkOrderOption = {
+  id: string;
+  label: string;
+  materialCategory: string | null;
+  process: string | null;
+  complexityClass: string | null;
+  diameterClass: string | null;
+};
+
 function str(value: FormDataEntryValue | null): string {
   return value === null ? "" : String(value).trim();
 }
 
-export function LogActualForm() {
+const EMPTY_BUCKET = {
+  materialCategory: "",
+  process: "",
+  complexityClass: "",
+  diameterClass: "NOT_APPLICABLE"
+};
+
+export function LogActualForm({ workOrders = [] }: { workOrders?: WorkOrderOption[] }) {
   const router = useRouter();
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [saving, setSaving] = useState(false);
+  // Bucket selects are controlled so linking a work order can prefill them.
+  const [workOrderId, setWorkOrderId] = useState("");
+  const [bucket, setBucket] = useState(EMPTY_BUCKET);
+  const [prefillNote, setPrefillNote] = useState("");
+
+  function onWorkOrderChange(id: string) {
+    setWorkOrderId(id);
+    setPrefillNote("");
+    if (!id) {
+      return;
+    }
+    const wo = workOrders.find((w) => w.id === id);
+    if (!wo) return;
+    if (wo.materialCategory && wo.process && wo.complexityClass) {
+      setBucket({
+        materialCategory: wo.materialCategory,
+        process: wo.process,
+        complexityClass: wo.complexityClass,
+        diameterClass: wo.diameterClass ?? "NOT_APPLICABLE"
+      });
+      setPrefillNote("Bucket prefilled from the work order's part. Adjust if needed.");
+    } else {
+      setPrefillNote(
+        "This work order's part has no material/process/complexity set — choose the bucket manually."
+      );
+    }
+  }
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -68,16 +111,17 @@ export function LogActualForm() {
     const completedAtRaw = str(data.get("completedAt"));
 
     const payload = {
-      materialCategory: str(data.get("materialCategory")),
-      process: str(data.get("process")),
-      complexityClass: str(data.get("complexityClass")),
-      diameterClass: str(data.get("diameterClass")) || "NOT_APPLICABLE",
+      materialCategory: bucket.materialCategory,
+      process: bucket.process,
+      complexityClass: bucket.complexityClass,
+      diameterClass: bucket.diameterClass || "NOT_APPLICABLE",
       quantity: Number(str(data.get("quantity"))) || 0,
       actualSetupHours: Number(str(data.get("actualSetupHours"))) || 0,
       actualCycleMinutesPerPiece: Number(str(data.get("actualCycleMinutesPerPiece"))) || 0,
       completedAt: completedAtRaw
         ? new Date(`${completedAtRaw}T00:00:00`).toISOString()
         : new Date().toISOString(),
+      workOrderId: workOrderId || undefined,
       notes: str(data.get("notes")) || undefined
     };
 
@@ -109,6 +153,9 @@ export function LogActualForm() {
     }
     setSaving(false);
     event.currentTarget.reset();
+    setWorkOrderId("");
+    setBucket(EMPTY_BUCKET);
+    setPrefillNote("");
     router.refresh();
   }
 
@@ -126,10 +173,34 @@ export function LogActualForm() {
           references, or customer-identifying detail.
         </div>
         <form onSubmit={onSubmit} className="form-grid">
+          {workOrders.length > 0 ? (
+            <label>
+              Link a work order (optional)
+              <select
+                className="select"
+                value={workOrderId}
+                onChange={(e) => onWorkOrderChange(e.target.value)}
+              >
+                <option value="">No work order — log standalone</option>
+                {workOrders.map((wo) => (
+                  <option key={wo.id} value={wo.id}>
+                    {wo.label}
+                  </option>
+                ))}
+              </select>
+              {prefillNote ? <span className="form-hint">{prefillNote}</span> : null}
+            </label>
+          ) : null}
           <div className="form-grid two-col">
             <label>
               Material
-              <select className="select" name="materialCategory" required>
+              <select
+                className="select"
+                name="materialCategory"
+                required
+                value={bucket.materialCategory}
+                onChange={(e) => setBucket((b) => ({ ...b, materialCategory: e.target.value }))}
+              >
                 <option value="">Select</option>
                 {MATERIALS.map(([value, label]) => (
                   <option key={value} value={value}>
@@ -140,7 +211,13 @@ export function LogActualForm() {
             </label>
             <label>
               Process
-              <select className="select" name="process" required>
+              <select
+                className="select"
+                name="process"
+                required
+                value={bucket.process}
+                onChange={(e) => setBucket((b) => ({ ...b, process: e.target.value }))}
+              >
                 <option value="">Select</option>
                 {PROCESSES.map(([value, label]) => (
                   <option key={value} value={value}>
@@ -151,7 +228,13 @@ export function LogActualForm() {
             </label>
             <label>
               Complexity
-              <select className="select" name="complexityClass" required>
+              <select
+                className="select"
+                name="complexityClass"
+                required
+                value={bucket.complexityClass}
+                onChange={(e) => setBucket((b) => ({ ...b, complexityClass: e.target.value }))}
+              >
                 <option value="">Select</option>
                 {COMPLEXITIES.map(([value, label]) => (
                   <option key={value} value={value}>
@@ -162,7 +245,12 @@ export function LogActualForm() {
             </label>
             <label>
               Diameter class
-              <select className="select" name="diameterClass" defaultValue="NOT_APPLICABLE">
+              <select
+                className="select"
+                name="diameterClass"
+                value={bucket.diameterClass}
+                onChange={(e) => setBucket((b) => ({ ...b, diameterClass: e.target.value }))}
+              >
                 {DIAMETERS.map(([value, label]) => (
                   <option key={value} value={value}>
                     {label}

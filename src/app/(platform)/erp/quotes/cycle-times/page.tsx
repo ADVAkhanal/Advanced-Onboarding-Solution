@@ -49,6 +49,52 @@ export default async function CycleTimeAdminPage() {
     ]
   });
 
+  // Recent work orders so an actual can be tied back to a real job and the
+  // form can prefill the bucket from the work order's part. Only loaded for
+  // users who can record actuals. Quote ↔ Part are loose FKs (no Prisma
+  // relation), so parts are fetched separately and mapped by id.
+  let workOrderOptions: Array<{
+    id: string;
+    label: string;
+    materialCategory: string | null;
+    process: string | null;
+    complexityClass: string | null;
+    diameterClass: string | null;
+  }> = [];
+  if (canRecord) {
+    const workOrders = await prisma.workOrder.findMany({
+      where: { organizationId: user.organizationId, archivedAt: null },
+      orderBy: { updatedAt: "desc" },
+      take: 50,
+      select: { id: true, workOrderNumber: true, title: true, partId: true }
+    });
+    const partIds = workOrders.map((w) => w.partId).filter((id): id is string => Boolean(id));
+    const parts = partIds.length
+      ? await prisma.part.findMany({
+          where: { organizationId: user.organizationId, id: { in: partIds } },
+          select: {
+            id: true,
+            materialCategory: true,
+            primaryProcess: true,
+            complexityClass: true,
+            diameterClass: true
+          }
+        })
+      : [];
+    const partById = new Map(parts.map((p) => [p.id, p]));
+    workOrderOptions = workOrders.map((w) => {
+      const part = w.partId ? partById.get(w.partId) : undefined;
+      return {
+        id: w.id,
+        label: `${w.workOrderNumber} · ${w.title}`,
+        materialCategory: part?.materialCategory ?? null,
+        process: part?.primaryProcess ?? null,
+        complexityClass: part?.complexityClass ?? null,
+        diameterClass: part?.diameterClass ?? null
+      };
+    });
+  }
+
   const rows: LookupRow[] = lookups.map((lookup) => {
     const bucketParts = [
       materialLabel(lookup.materialCategory),
@@ -184,7 +230,7 @@ export default async function CycleTimeAdminPage() {
 
       {canRecord ? (
         <div style={{ marginTop: 14 }}>
-          <LogActualForm />
+          <LogActualForm workOrders={workOrderOptions} />
         </div>
       ) : null}
 

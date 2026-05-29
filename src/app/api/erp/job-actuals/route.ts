@@ -1,7 +1,7 @@
 import { requirePermission } from "@/lib/auth";
 import { recordAudit } from "@/lib/audit";
 import { assertNoProhibitedFields } from "@/lib/data-boundary";
-import { handleRouteError, ok } from "@/lib/http";
+import { handleRouteError, HttpError, ok } from "@/lib/http";
 import { type CycleBucket, recomputeLookupFromActuals } from "@/lib/job-actuals";
 import { prisma } from "@/lib/prisma";
 import { erpJobActualCreateSchema } from "@/lib/validators";
@@ -15,6 +15,19 @@ export async function POST(request: Request) {
     const raw = await request.json();
     assertNoProhibitedFields(raw);
     const body = erpJobActualCreateSchema.parse(raw);
+
+    // If a work order is linked, confirm it belongs to this org before
+    // persisting the reference — keeps the traceability link trustworthy
+    // and prevents cross-org id injection.
+    if (body.workOrderId) {
+      const workOrder = await prisma.workOrder.findFirst({
+        where: { id: body.workOrderId, organizationId: user.organizationId, archivedAt: null },
+        select: { id: true }
+      });
+      if (!workOrder) {
+        throw new HttpError(422, "Linked work order not found.", "invalid_work_order");
+      }
+    }
 
     const bucket: CycleBucket = {
       materialCategory: body.materialCategory,
