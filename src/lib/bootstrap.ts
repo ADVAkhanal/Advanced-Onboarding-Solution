@@ -1,5 +1,5 @@
-import { UserLevel } from "@prisma/client";
-import { hashPassword } from "./auth";
+import { Prisma, UserLevel } from "@prisma/client";
+import { hashPassword, verifyPassword } from "./auth";
 import { PERMISSIONS, permissionsForLevel } from "./permissions";
 import { prisma } from "./prisma";
 import { BRAND_FOOTER, COMMERCIAL_NAME, DISCLAIMER, ENCLAVE_COMPATIBLE_STATEMENT, PRODUCT_NAME, SHORT_NAME, TAGLINE } from "./reference-data";
@@ -121,5 +121,146 @@ export async function ensureBootstrapAdmin() {
     }
   });
 
+  // Record a stable marker so future credential changes can be reconciled
+  // even if the email changes.
+  await prisma.organization.update({
+    where: { id: organization.id },
+    data: { settings: mergeSettings(organization.settings, { bootstrapAdminId: admin.id }) }
+  });
+
   return admin;
+}
+
+/**
+ * Keep the bootstrap admin's credentials in sync with the
+ * BOOTSTRAP_ADMIN_EMAIL / BOOTSTRAP_ADMIN_PASSWORD environment variables.
+ *
+ * ensureBootstrapAdmin() only runs on a brand-new install (zero users), so
+ * once the admin exists, changing those env vars and redeploying would
+ * otherwise have no effect — the stored email/hash would keep the old
+ * values and login with the new credentials would be rejected. This
+ * reconciliation closes that gap.
+ *
+ * Safety:
+ * - Acts on exactly one identifiable bootstrap admin: the user recorded in
+ *   organization.settings.bootstrapAdminId, else the user matching the env
+ *   email, else the sole active ADMIN-tier user. If none can be identified
+ *   unambiguously it does nothing.
+ * - Never reassigns an email that another user already holds (would violate
+ *   the (organizationId, email) unique constraint) — in that case it syncs
+ *   the password only.
+ * - Idempotent: once credentials match and the id is recorded, it performs
+ *   no writes on subsequent logins.
+ *
+ * Because there is no in-app password-change feature, the environment is the
+ * source of truth for the bootstrap admin credential by design.
+ */
+export async function reconcileBootstrapAdmin() {
+  const email = process.env.BOOTSTRAP_ADMIN_EMAIL?.trim().toLowerCase();
+  const password = process.env.BOOTSTRAP_ADMIN_PASSWORD;
+  if (!email || !password) {
+    return null;
+  }
+
+  const organization = await prisma.organization.findFirst({ where: { slug: ORGANIZATION_SLUG } });
+  if (!organization) {
+    return null;
+  }
+
+  const settings = (organization.settings ?? {}) as Prisma.JsonObject;
+  const recordedId = typeof settings.bootstrapAdminId === "string" ? settings.bootstrapAdminId : null;
+
+  // Identify the bootstrap admin: recorded id → current env email → sole admin.
+  let admin =
+    (recordedId
+      ? await prisma.user.findFirst({
+          where: { id: recordedId, organizationId: organization.id, archivedAt: null }
+        })
+      : null) ??
+    (await prisma.user.findFirst({
+      where: { organizationId: organization.id, email, archivedAt: null }
+    }));
+
+  if (!admin) {
+    const admins = await prisma.user.findMany({
+      where: { organizationId: organization.id, userLevel: UserLevel.ADMIN, archivedAt: null },
+      take: 2
+    });
+    if (admins.length === 1) {
+      admin = admins[0];
+    }
+  }
+
+  if (!admin) {
+    // Can't safely identify the bootstrap admin — leave everything alone.
+    return null;
+  }
+
+  const emailDrifted = admin.email !== email;
+  const passwordDrifted = !(await verifyPassword(password, admin.passwordHash));
+  const idUnrecorded = recordedId !== admin.id;
+
+  if (!emailDrifted && !passwordDrifted && !idUnrecorded) {
+    return admin;
+  }
+
+  const data: Prisma.UserUpdateInput = {};
+  let appliedEmail = false;
+
+  if (emailDrifted) {
+    const clash = await prisma.user.findFirst({
+      where: { organizationId: organization.id, email, NOT: { id: admin.id } },
+      select: { id: true }
+    });
+    if (!clash) {
+      data.email = email;
+      appliedEmail = true;
+    }
+  }
+
+  if (passwordDrifted) {
+    data.passwordHash = await hashPassword(password);
+  }
+
+  if (Object.keys(data).length > 0) {
+    admin = await prisma.user.update({ where: { id: admin.id }, data });
+  }
+
+  if (idUnrecorded) {
+    await prisma.organization.update({
+      where: { id: organization.id },
+      data: { settings: mergeSettings(organization.settings, { bootstrapAdminId: admin.id }) }
+    });
+  }
+
+  if (appliedEmail || passwordDrifted) {
+    const changed = [appliedEmail ? "email" : null, passwordDrifted ? "password" : null]
+      .filter(Boolean)
+      .join(" and ");
+    await prisma.auditLog.create({
+      data: {
+        organizationId: organization.id,
+        actorId: admin.id,
+        action: "bootstrap.admin_reconciled",
+        entityType: "user",
+        entityId: admin.id,
+        outcome: "SUCCESS",
+        reason: `Bootstrap admin ${changed} synced from environment variables.`,
+        createdById: admin.id
+      }
+    });
+  }
+
+  return admin;
+}
+
+function mergeSettings(
+  current: Prisma.JsonValue | null,
+  patch: Record<string, string>
+): Prisma.InputJsonValue {
+  const base =
+    current && typeof current === "object" && !Array.isArray(current)
+      ? (current as Prisma.JsonObject)
+      : {};
+  return { ...base, ...patch } as Prisma.InputJsonValue;
 }

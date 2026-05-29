@@ -1,7 +1,8 @@
 import { setSessionCookie, verifyPassword } from "@/lib/auth";
 import { recordAudit } from "@/lib/audit";
-import { ensureBootstrapAdmin } from "@/lib/bootstrap";
+import { ensureBootstrapAdmin, reconcileBootstrapAdmin } from "@/lib/bootstrap";
 import { fail, handleRouteError, ok } from "@/lib/http";
+import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import { loginSchema } from "@/lib/validators";
 
@@ -10,6 +11,14 @@ export const dynamic = "force-dynamic";
 export async function POST(request: Request) {
   try {
     await ensureBootstrapAdmin();
+    // Keep the bootstrap admin's email/password in sync with the env vars
+    // when they change between deploys. Fail-open: a reconcile error must
+    // never block the login path.
+    try {
+      await reconcileBootstrapAdmin();
+    } catch (reconcileError) {
+      logger.error({ err: reconcileError }, "bootstrap admin reconcile failed");
+    }
     const body = loginSchema.parse(await request.json());
     const user = await prisma.user.findFirst({
       where: {
