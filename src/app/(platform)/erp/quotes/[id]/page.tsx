@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { complexityLabel, diameterLabel, materialLabel, processLabel } from "@/lib/quoting";
 import { DataTable, type Column } from "@/components/data-table";
 import { QuoteStatusActions } from "./status-actions";
+import { AddLineForm } from "./add-line-form";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +32,10 @@ export default async function QuoteDetailPage({ params }: { params: { id: string
     notFound();
   }
 
-  const [lines, customer, owner, auditEntries] = await Promise.all([
+  const canPrice = user.permissions.includes("quote:price");
+  const isTerminal = quote.status === "WON" || quote.status === "LOST";
+
+  const [lines, customer, owner, auditEntries, lookups] = await Promise.all([
     prisma.quoteLine.findMany({
       where: { organizationId: user.organizationId, quoteId: quote.id, archivedAt: null },
       orderBy: { createdAt: "asc" }
@@ -63,8 +67,38 @@ export default async function QuoteDetailPage({ params }: { params: { id: string
         reason: true,
         createdAt: true
       }
-    })
+    }),
+    // Only load lookups when the user can add lines — keeps the query
+    // off the critical path for read-only viewers.
+    canPrice && !isTerminal
+      ? prisma.cycleTimeLookup.findMany({
+          where: {
+            organizationId: user.organizationId,
+            status: "ACTIVE",
+            archivedAt: null
+          },
+          select: {
+            id: true,
+            materialCategory: true,
+            process: true,
+            complexityClass: true,
+            diameterClass: true,
+            estimatedSetupHours: true,
+            estimatedCycleMinutes: true
+          }
+        })
+      : Promise.resolve([])
   ]);
+
+  const lookupOptions = lookups.map((lookup) => ({
+    id: lookup.id,
+    materialCategory: lookup.materialCategory,
+    process: lookup.process,
+    complexityClass: lookup.complexityClass,
+    diameterClass: lookup.diameterClass,
+    estimatedSetupHours: Number(lookup.estimatedSetupHours),
+    estimatedCycleMinutes: Number(lookup.estimatedCycleMinutes)
+  }));
 
   const lineRows: LineRow[] = lines.map((line) => {
     const bucketParts: string[] = [];
@@ -250,7 +284,7 @@ export default async function QuoteDetailPage({ params }: { params: { id: string
         </section>
       </div>
 
-      {user.permissions.includes("quote:price") ? (
+      {canPrice ? (
         <section className="card" style={{ marginTop: 14 }}>
           <div className="section-title">
             <h2>Status actions</h2>
@@ -281,6 +315,18 @@ export default async function QuoteDetailPage({ params }: { params: { id: string
             stickyHeader={false}
           />
         </div>
+        {canPrice ? (
+          <div className="card-pad" style={{ borderTop: "1px solid var(--line)" }}>
+            {isTerminal ? (
+              <p className="metric-note">
+                This quote is {statusLabel(quote.status)} — lines are locked. Re-open or clone
+                to add more.
+              </p>
+            ) : (
+              <AddLineForm quoteId={quote.id} lookups={lookupOptions} />
+            )}
+          </div>
+        ) : null}
       </section>
 
       <section className="card" style={{ marginTop: 14 }}>

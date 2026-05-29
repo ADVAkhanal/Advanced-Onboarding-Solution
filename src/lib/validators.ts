@@ -285,6 +285,28 @@ export const erpManufacturingQuoteCreateSchema = z.object({
   exportControlFlag: z.coerce.boolean().optional()
 });
 
+// Adding a line to an existing quote. Reuses the same bucket / cost
+// fields as the manufacturing intake — just without the quote header.
+export const erpQuoteLineCreateSchema = z.object({
+  partDescription: z.string().trim().min(3).max(500),
+  quantity: z.coerce.number().int().min(1).max(1_000_000),
+
+  materialCategory: materialCategory,
+  process: manufacturingProcess,
+  complexityClass: complexityClass,
+  diameterClass: diameterClass.default("NOT_APPLICABLE"),
+
+  setupHours: optionalMoney,
+  cycleMinutesPerPiece: optionalMoney,
+  materialCostPerUnit: optionalMoney,
+  laborRatePerHour: optionalMoney,
+  burdenRatePerHour: optionalMoney,
+  marginPercent: z.coerce.number().min(0).max(95).optional(),
+
+  cycleTimeLookupId: optionalId,
+  routingNotes: optionalText
+});
+
 // Quote status transition. The route enforces the state machine; the
 // schema only validates the target is one of the known statuses.
 export const erpQuoteStatusTransitionSchema = z.object({
