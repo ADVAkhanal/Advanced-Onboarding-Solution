@@ -5,6 +5,7 @@ import { redactProhibited } from "../src/lib/ai/redaction";
 import { chunkSopText } from "../src/lib/ai/chunker";
 import { __testHooks } from "../src/lib/ai/sop-answerer";
 import { estimateLine } from "../src/lib/quoting";
+import { aggregateActuals } from "../src/lib/cycle-time-aggregation";
 
 const mode = process.argv[2] ?? "all";
 
@@ -123,6 +124,68 @@ async function runUnit() {
   });
   assert.equal(zeroQty.unitPrice, 0);
   assert.equal(zeroQty.materialCost, 0);
+
+  // Cycle-time aggregation (feedback loop).
+  // No samples → null (caller keeps prior estimate).
+  assert.equal(aggregateActuals([]), null);
+  // Samples with non-positive quantity are ignored → null when all unusable.
+  assert.equal(
+    aggregateActuals([{ quantity: 0, actualSetupHours: 1, actualCycleMinutesPerPiece: 5 }]),
+    null
+  );
+
+  // Single perfectly-consistent sample: estimate equals the sample, but
+  // confidence is low because n=1 (sampleFactor = 1/20 = 0.05).
+  const one = aggregateActuals([
+    { quantity: 10, actualSetupHours: 2, actualCycleMinutesPerPiece: 6 }
+  ]);
+  assert.ok(one);
+  assert.equal(one!.estimatedSetupHours, 2);
+  assert.equal(one!.estimatedCycleMinutes, 6);
+  assert.equal(one!.sampleSize, 1);
+  assert.equal(one!.confidenceScore, 0.05);
+
+  // Quantity-weighted cycle mean: a 100-piece run at 4 min should pull the
+  // estimate toward 4 far more than a 1-piece run at 10 min.
+  // weighted = (4*100 + 10*1) / 101 = 410/101 = 4.0594...
+  const weighted = aggregateActuals([
+    { quantity: 100, actualSetupHours: 1, actualCycleMinutesPerPiece: 4 },
+    { quantity: 1, actualSetupHours: 3, actualCycleMinutesPerPiece: 10 }
+  ]);
+  assert.ok(weighted);
+  assert.equal(weighted!.estimatedCycleMinutes, 4.059);
+  // Setup is a simple mean: (1 + 3) / 2 = 2.
+  assert.equal(weighted!.estimatedSetupHours, 2);
+  assert.equal(weighted!.sampleSize, 2);
+
+  // Consistency: identical cycle values → consistencyFactor = 1, so
+  // confidence is driven purely by sampleFactor. 10 identical samples →
+  // sampleFactor = 0.5, consistencyFactor = 1 → confidence = 0.5.
+  const consistent = aggregateActuals(
+    Array.from({ length: 10 }, () => ({
+      quantity: 5,
+      actualSetupHours: 1,
+      actualCycleMinutesPerPiece: 8
+    }))
+  );
+  assert.ok(consistent);
+  assert.equal(consistent!.confidenceScore, 0.5);
+  assert.equal(consistent!.estimatedCycleMinutes, 8);
+
+  // Spread reduces confidence: same n=10 but high variance in cycle values
+  // must yield lower confidence than the consistent case above.
+  const noisy = aggregateActuals(
+    Array.from({ length: 10 }, (_unused, i) => ({
+      quantity: 5,
+      actualSetupHours: 1,
+      actualCycleMinutesPerPiece: i % 2 === 0 ? 2 : 14
+    }))
+  );
+  assert.ok(noisy);
+  assert.ok(
+    noisy!.confidenceScore < consistent!.confidenceScore,
+    "high-variance samples should score lower confidence than consistent ones"
+  );
 }
 
 async function runIntegration() {
