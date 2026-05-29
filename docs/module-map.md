@@ -39,8 +39,8 @@ Snapshot of the production modules in the Advanced Shop Management & Onboarding 
 | Module | Routes | API | Schema |
 |---|---|---|---|
 | **Customers & parts** | `/erp/customers` | `/api/erp/customers`, `/api/erp/parts` | `CustomerAccount`, `Part` |
-| **Quotes** | `/erp/quotes` | `/api/erp/quotes` | `Quote`, `QuoteLine` |
-| **Sales orders** | (in `/erp/quotes`) | `/api/erp/sales-orders` | `SalesOrder` |
+| **Quoting engine** | `/erp/quotes`, `/erp/quotes/new`, `/erp/quotes/[id]`, `/erp/quotes/cycle-times` | `/api/erp/quotes`, `/api/erp/quotes/manufacturing`, `/api/erp/quotes/[id]/{lines,status,convert}`, `/api/erp/cycle-times` | `Quote`, `QuoteLine`, `CycleTimeLookup` — manufacturing-aware. See `docs/quoting-engine.md`. |
+| **Sales orders** | (in `/erp/quotes`) | `/api/erp/sales-orders` | `SalesOrder` (quote conversion target) |
 | **Jobs / work orders** | `/erp/jobs` | `/api/erp/jobs`, `/api/erp/operations` | `WorkOrder`, `WorkOrderOperation` |
 | **Shop schedule** | `/erp/schedule` | `/api/erp/schedule` | `ShopScheduleItem` |
 | **Inventory** | `/erp/inventory` | `/api/erp/inventory` | `InventoryItem`, `InventoryTransaction` |
