@@ -7,6 +7,7 @@ import { complexityLabel, diameterLabel, materialLabel, processLabel } from "@/l
 import { DataTable, type Column } from "@/components/data-table";
 import { QuoteStatusActions } from "./status-actions";
 import { AddLineForm } from "./add-line-form";
+import { ConvertAction } from "./convert-action";
 
 export const dynamic = "force-dynamic";
 
@@ -35,7 +36,7 @@ export default async function QuoteDetailPage({ params }: { params: { id: string
   const canPrice = user.permissions.includes("quote:price");
   const isTerminal = quote.status === "WON" || quote.status === "LOST";
 
-  const [lines, customer, owner, auditEntries, lookups] = await Promise.all([
+  const [lines, customer, owner, auditEntries, lookups, existingOrder] = await Promise.all([
     prisma.quoteLine.findMany({
       where: { organizationId: user.organizationId, quoteId: quote.id, archivedAt: null },
       orderBy: { createdAt: "asc" }
@@ -87,7 +88,12 @@ export default async function QuoteDetailPage({ params }: { params: { id: string
             estimatedCycleMinutes: true
           }
         })
-      : Promise.resolve([])
+      : Promise.resolve([]),
+    // Any sales order already created from this quote (single conversion).
+    prisma.salesOrder.findFirst({
+      where: { organizationId: user.organizationId, quoteId: quote.id, archivedAt: null },
+      select: { id: true, orderNumber: true }
+    })
   ]);
 
   const lookupOptions = lookups.map((lookup) => ({
@@ -296,6 +302,35 @@ export default async function QuoteDetailPage({ params }: { params: { id: string
               currentStatus={quote.status}
               canSubmit={user.permissions.includes("quote:submit")}
             />
+          </div>
+        </section>
+      ) : null}
+
+      {quote.status === "WON" ? (
+        <section className="card" style={{ marginTop: 14 }}>
+          <div className="section-title">
+            <h2>Sales order</h2>
+            {existingOrder ? <span className="pill green">Converted</span> : <span className="pill amber">Not converted</span>}
+          </div>
+          <div className="card-pad">
+            {existingOrder ? (
+              <p className="subhead">
+                This quote was converted to sales order <strong>{existingOrder.orderNumber}</strong>.
+              </p>
+            ) : user.permissions.includes("quote:submit") ? (
+              <>
+                <p className="subhead" style={{ marginBottom: 10 }}>
+                  Convert this won quote into a sales order. The order links back to this quote
+                  and carries the customer, total, and due date forward.
+                </p>
+                <ConvertAction quoteId={quote.id} />
+              </>
+            ) : (
+              <p className="metric-note">
+                Quote is won but not yet converted. A director or admin can convert it to a sales
+                order.
+              </p>
+            )}
           </div>
         </section>
       ) : null}

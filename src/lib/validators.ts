@@ -314,6 +314,14 @@ export const erpQuoteStatusTransitionSchema = z.object({
   reason: z.string().trim().min(1).max(500).optional()
 });
 
+// Quote → Sales Order conversion. All fields optional; the route pulls
+// customer / total / due date from the source quote.
+export const erpQuoteConvertSchema = z.object({
+  customerPoNumber: z.string().trim().max(120).optional(),
+  promisedDate: optionalDate,
+  notes: z.string().trim().max(2000).optional()
+});
+
 // Cycle-time lookup upsert payload. The bucket fields (material,
 // process, complexity, diameter) are the unique key — POSTs upsert
 // against an existing row when the bucket matches.
