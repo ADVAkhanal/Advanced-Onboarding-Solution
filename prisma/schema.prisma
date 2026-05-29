@@ -2219,6 +2219,13 @@ model CycleTimeLookup {
   estimatedCycleMinutes  Decimal              @db.Decimal(8, 3)
   sampleSize             Int                  @default(0)
   confidenceScore        Decimal?             @db.Decimal(3, 2)
+  // Provenance of the current estimate:
+  //   SEED    — demo / bootstrap data
+  //   MANUAL  — entered or overridden by a manager
+  //   DERIVED — auto-computed from recorded JobActual rows
+  // DERIVED is the goal: estimates that come from this shop's own
+  // completed-job history, which is the structural moat vs ProShop.
+  source                 String               @default("MANUAL")
   lastReviewedAt         DateTime?
   reviewedById           String?
   notes                  String?
@@ -2232,6 +2239,41 @@ model CycleTimeLookup {
   @@unique([organizationId, materialCategory, process, complexityClass, diameterClass])
   @@index([organizationId, status])
   @@map("cycle_time_lookups")
+}
+
+// JobActual is an append-only record of how long a completed job actually
+// took, bucketed by the same (material, process, complexity, diameter)
+// key as CycleTimeLookup. Recording an actual triggers a recompute of the
+// matching lookup so estimates continuously improve from real history.
+//
+// Append-only by design — actuals are quality/production records and must
+// not be silently overwritten (AS9100D 7.5 records-retention posture).
+// Corrections are made by recording a superseding row, not editing.
+model JobActual {
+  id                       String               @id @default(cuid())
+  organizationId           String
+  partId                   String?
+  workOrderId              String?
+  materialCategory         MaterialCategory
+  process                  ManufacturingProcess
+  complexityClass          ComplexityClass
+  diameterClass            DiameterClass        @default(NOT_APPLICABLE)
+  quantity                 Int
+  actualSetupHours         Decimal              @db.Decimal(8, 2)
+  actualCycleMinutesPerPiece Decimal            @db.Decimal(8, 3)
+  completedAt              DateTime
+  notes                    String?
+  // Soft-exclude an actual from aggregation (e.g. a known anomaly /
+  // scrapped run) without deleting the record.
+  excludedFromAggregation  Boolean              @default(false)
+  createdAt                DateTime             @default(now())
+  createdById              String?
+  archivedAt               DateTime?
+
+  @@index([organizationId, materialCategory, process, complexityClass, diameterClass])
+  @@index([organizationId, completedAt])
+  @@index([organizationId, workOrderId])
+  @@map("job_actuals")
 }
 
 model SalesOrder {
