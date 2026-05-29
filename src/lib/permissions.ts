@@ -58,7 +58,9 @@ export const PERMISSIONS = [
   ["quote:submit", "Submit quotes to customers"],
   ["quote:admin", "Administer quote settings and templates"],
   ["cycletime:view", "View cycle-time lookup tables"],
-  ["cycletime:manage", "Maintain cycle-time lookup tables"]
+  ["cycletime:manage", "Maintain cycle-time lookup tables"],
+  ["jobactual:view", "View recorded job actuals"],
+  ["jobactual:record", "Record completed-job actuals (feeds cycle-time estimates)"]
 ] as const;
 
 export type PermissionKey = (typeof PERMISSIONS)[number][0];
@@ -123,7 +125,9 @@ const levelPermissions: Record<UserLevel, PermissionKey[]> = {
     "quote:view",
     "quote:create",
     "quote:price",
-    "cycletime:view"
+    "cycletime:view",
+    "jobactual:view",
+    "jobactual:record"
   ],
   DIRECTOR: [
     "dashboard:view",
@@ -175,7 +179,9 @@ const levelPermissions: Record<UserLevel, PermissionKey[]> = {
     "quote:price",
     "quote:submit",
     "cycletime:view",
-    "cycletime:manage"
+    "cycletime:manage",
+    "jobactual:view",
+    "jobactual:record"
   ],
   ADMIN: PERMISSIONS.map(([key]) => key)
 };

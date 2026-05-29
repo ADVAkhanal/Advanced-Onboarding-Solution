@@ -59,6 +59,12 @@ async function runUnit() {
   assert.equal(can("MANAGER", "cycletime:manage"), false);
   assert.equal(permissionsForLevel("ADMIN").includes("quote:admin"), true);
 
+  // Job-actual permissions (feedback loop): managers and up record actuals.
+  assert.equal(can("USER", "jobactual:record"), false);
+  assert.equal(can("MANAGER", "jobactual:record"), true);
+  assert.equal(can("DIRECTOR", "jobactual:record"), true);
+  assert.equal(permissionsForLevel("ADMIN").includes("jobactual:record"), true);
+
   // Quoting math — load-bearing for the entire quoting flow.
   // Zero-margin: total equals subtotal, unitPrice = total / quantity.
   const noMargin = estimateLine({

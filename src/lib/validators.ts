@@ -322,6 +322,22 @@ export const erpQuoteConvertSchema = z.object({
   notes: z.string().trim().max(2000).optional()
 });
 
+// Recording a completed-job actual. Same bucket key as the lookup;
+// recording one recomputes the matching lookup as DERIVED.
+export const erpJobActualCreateSchema = z.object({
+  materialCategory: materialCategory,
+  process: manufacturingProcess,
+  complexityClass: complexityClass,
+  diameterClass: diameterClass.default("NOT_APPLICABLE"),
+  quantity: z.coerce.number().int().min(1).max(1_000_000),
+  actualSetupHours: z.coerce.number().min(0).max(999),
+  actualCycleMinutesPerPiece: z.coerce.number().min(0).max(99_999),
+  completedAt: z.string().datetime(),
+  partId: optionalId,
+  workOrderId: optionalId,
+  notes: optionalText
+});
+
 // Cycle-time lookup upsert payload. The bucket fields (material,
 // process, complexity, diameter) are the unique key — POSTs upsert
 // against an existing row when the bucket matches.
