@@ -201,6 +201,9 @@ export default async function QuoteDetailPage({ params }: { params: { id: string
           </p>
         </div>
         <div className="actions">
+          <Link className="button" href={`/erp/quotes/${quote.id}/print`}>
+            Customer PDF
+          </Link>
           <Link className="button" href="/erp/quotes">
             ← Back to quotes
           </Link>

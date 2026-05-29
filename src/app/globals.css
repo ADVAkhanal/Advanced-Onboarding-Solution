@@ -1551,3 +1551,172 @@ button.pill:focus-visible {
     outline-offset: 2px;
   }
 }
+
+/* ------------------------------------------------------------------------ */
+/* Printable documents (customer-facing quote PDF via browser print)        */
+/* On screen the document sits inside the app shell; when printed, all app   */
+/* chrome is stripped so "Save as PDF" yields a clean one-page quote.        */
+/* ------------------------------------------------------------------------ */
+
+.print-document {
+  max-width: 880px;
+  margin: 0 auto;
+  background: #fff;
+  color: #0f1b2d;
+}
+
+.print-doc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  padding-bottom: 18px;
+  border-bottom: 3px solid var(--blue);
+  margin-bottom: 22px;
+}
+
+.print-doc-brand strong {
+  display: block;
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--nav);
+}
+
+.print-doc-brand span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.print-doc-meta {
+  text-align: right;
+  font-size: 12px;
+}
+
+.print-doc-meta .doc-title {
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--nav);
+}
+
+.print-doc-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-bottom: 22px;
+}
+
+.print-doc-grid h4 {
+  margin: 0 0 4px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.print-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  margin-bottom: 18px;
+}
+
+.print-table th,
+.print-table td {
+  padding: 9px 10px;
+  border-bottom: 1px solid #e1e8f0;
+  text-align: left;
+}
+
+.print-table th {
+  background: var(--soft);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #46566c;
+}
+
+.print-table td.num,
+.print-table th.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.print-totals {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 22px;
+}
+
+.print-totals table {
+  font-size: 13px;
+  border-collapse: collapse;
+  min-width: 280px;
+}
+
+.print-totals td {
+  padding: 6px 10px;
+}
+
+.print-totals td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.print-totals tr.grand td {
+  border-top: 2px solid var(--nav);
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.print-doc-footer {
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.print-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+@media print {
+  /* Strip the app shell so the printed page is just the document. */
+  .sidebar,
+  .topbar,
+  .disclaimer,
+  .no-print {
+    display: none !important;
+  }
+
+  .app-shell {
+    display: block !important;
+  }
+
+  .workspace {
+    padding: 0 !important;
+  }
+
+  body {
+    background: #fff !important;
+  }
+
+  .print-document {
+    max-width: none;
+    margin: 0;
+  }
+
+  /* Avoid awkward row splits across page breaks. */
+  .print-table tr,
+  .print-totals tr {
+    page-break-inside: avoid;
+  }
+
+  @page {
+    margin: 16mm;
+  }
+}
