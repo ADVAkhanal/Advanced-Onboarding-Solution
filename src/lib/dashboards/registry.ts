@@ -1,5 +1,7 @@
 import type { DashboardDef } from "./types";
+import { loadAdvancedCapacity } from "./advanced-capacity";
 import { loadSalesAdvanced } from "./sales-advanced";
+import { loadScheduling } from "./scheduling";
 
 /**
  * Dashboard registry. Each entry is a self-contained, data-driven
@@ -20,6 +22,25 @@ export const DASHBOARDS: DashboardDef[] = [
     inspiredBy: "ADVAkhanal/Sales-Advanced",
     permission: "report:view",
     load: loadSalesAdvanced
+  },
+  {
+    key: "advanced-capacity",
+    title: "Advanced Capacity",
+    eyebrow: "Analytics · Capacity",
+    description:
+      "Remaining shop load and utilization by work center, with overdue work-order risk.",
+    inspiredBy: "ADVAkhanal/AdvancedCapacity",
+    permission: "report:view",
+    load: loadAdvancedCapacity
+  },
+  {
+    key: "scheduling",
+    title: "Scheduling",
+    eyebrow: "Analytics · Scheduling",
+    description: "Near-term schedule: next 7 days, late items, status mix, and load by work center.",
+    inspiredBy: "ADVAkhanal/Scheduling",
+    permission: "report:view",
+    load: loadScheduling
   }
 ];
 
