@@ -26,6 +26,9 @@ export default async function ErpCommandPage() {
         <div className="actions">
           <Link className="button primary" href="/erp/jobs">Open Jobs</Link>
           <Link className="button" href="/erp/quotes">Quotes & Orders</Link>
+          {user.permissions.includes("report:view") ? (
+            <Link className="button" href="/erp/dashboards">Analytics Dashboards</Link>
+          ) : null}
         </div>
       </div>
 

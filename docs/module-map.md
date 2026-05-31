@@ -49,6 +49,7 @@ Snapshot of the production modules in the Advanced Shop Management & Onboarding 
 | **Quality** | `/erp/quality` | `/api/erp/quality`, `/api/erp/nonconformance` | `QualityInspection`, `NonconformanceRecord` |
 | **Shop-floor time** | `/erp/shop-floor` | `/api/erp/time-entries` | `TimeEntry` |
 | **Documents** | `/erp/documents` | `/api/erp/documents` | `DocumentRecord` |
+| **Analytics dashboards** | `/erp/dashboards`, `/erp/dashboards/[key]`, `/erp/dashboards/[key]/print` | `/api/erp/dashboards/[key]/export.csv` | Read-only over existing models (Quote, WorkOrderOperation, ShopScheduleItem, QualityInspection, NonconformanceRecord, Part). Dynamic engine; CSV + PDF export. See `docs/dashboards.md`. |
 
 ---
 
