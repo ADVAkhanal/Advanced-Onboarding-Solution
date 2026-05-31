@@ -1,5 +1,8 @@
 import type { DashboardDef } from "./types";
 import { loadAdvancedCapacity } from "./advanced-capacity";
+import { loadFirstPiece } from "./first-piece";
+import { loadNpi } from "./npi";
+import { loadPkGant } from "./pk-gant";
 import { loadSalesAdvanced } from "./sales-advanced";
 import { loadScheduling } from "./scheduling";
 
@@ -41,6 +44,33 @@ export const DASHBOARDS: DashboardDef[] = [
     inspiredBy: "ADVAkhanal/Scheduling",
     permission: "report:view",
     load: loadScheduling
+  },
+  {
+    key: "pk-gant",
+    title: "PK Gantt",
+    eyebrow: "Analytics · Schedule timeline",
+    description: "Gantt timeline of scheduled work-order operations with overdue highlighting.",
+    inspiredBy: "ADVAkhanal/PK-GANT",
+    permission: "report:view",
+    load: loadPkGant
+  },
+  {
+    key: "first-piece",
+    title: "First-Piece Run Tracker",
+    eyebrow: "Analytics · Quality",
+    description: "First-article / FAI inspection pass rate, overdue inspections, and open NCRs.",
+    inspiredBy: "ADVAkhanal/First-Piece-Run-Tracker",
+    permission: "report:view",
+    load: loadFirstPiece
+  },
+  {
+    key: "npi",
+    title: "NPI Dashboard",
+    eyebrow: "Analytics · New Product Introduction",
+    description: "New parts (90d) and their funnel: New → Quoted → In production, by material.",
+    inspiredBy: "ADVAkhanal/npi-dashboard",
+    permission: "report:view",
+    load: loadNpi
   }
 ];
 

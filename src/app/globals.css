@@ -1684,6 +1684,68 @@ button.pill:focus-visible {
   margin-bottom: 14px;
 }
 
+/* ------------------------------------------------------------------------ */
+/* Lightweight CSS Gantt (no charting dependency)                            */
+/* Rows positioned within a shared [windowStart, windowEnd] time window.     */
+/* ------------------------------------------------------------------------ */
+
+.gantt {
+  display: grid;
+  gap: 6px;
+}
+
+.gantt-axis {
+  display: flex;
+  justify-content: space-between;
+  padding-left: 180px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 6px;
+  margin-bottom: 4px;
+}
+
+.gantt-row {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.gantt-label {
+  font-size: 12px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gantt-track {
+  position: relative;
+  height: 22px;
+  background: #eef3f9;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.gantt-bar {
+  position: absolute;
+  top: 3px;
+  height: 16px;
+  border-radius: 4px;
+  min-width: 4px;
+}
+
+@media (max-width: 760px) {
+  .gantt-axis {
+    padding-left: 120px;
+  }
+  .gantt-row {
+    grid-template-columns: 120px minmax(0, 1fr);
+  }
+}
+
 @media print {
   /* Strip the app shell so the printed page is just the document. */
   .sidebar,
