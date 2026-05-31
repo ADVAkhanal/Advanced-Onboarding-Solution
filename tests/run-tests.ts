@@ -6,6 +6,7 @@ import { chunkSopText } from "../src/lib/ai/chunker";
 import { __testHooks } from "../src/lib/ai/sop-answerer";
 import { estimateLine } from "../src/lib/quoting";
 import { aggregateActuals } from "../src/lib/cycle-time-aggregation";
+import { csvCell, toCsv } from "../src/lib/export/csv";
 
 const mode = process.argv[2] ?? "all";
 
@@ -130,6 +131,30 @@ async function runUnit() {
   });
   assert.equal(zeroQty.unitPrice, 0);
   assert.equal(zeroQty.materialCost, 0);
+
+  // CSV export util (shared by every dashboard export).
+  assert.equal(csvCell("plain"), "plain");
+  assert.equal(csvCell(42), "42");
+  assert.equal(csvCell(null), "");
+  assert.equal(csvCell(undefined), "");
+  // Quotes are doubled and the field wrapped.
+  assert.equal(csvCell('say "hi"'), '"say ""hi"""');
+  // Commas and newlines force quoting.
+  assert.equal(csvCell("a,b"), '"a,b"');
+  assert.equal(csvCell("line1\nline2"), '"line1\nline2"');
+  const csv = toCsv(
+    [
+      { key: "name", label: "Name" },
+      { key: "qty", label: "Qty" }
+    ],
+    [
+      { name: "Widget, A", qty: 3 },
+      { name: "Bracket", qty: 10 }
+    ]
+  );
+  assert.equal(csv, 'Name,Qty\n"Widget, A",3\nBracket,10');
+  // Header-only when no rows.
+  assert.equal(toCsv([{ key: "x", label: "X" }], []), "X");
 
   // Cycle-time aggregation (feedback loop).
   // No samples → null (caller keeps prior estimate).
