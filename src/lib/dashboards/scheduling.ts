@@ -26,7 +26,7 @@ export async function loadScheduling(ctx: DashboardContext): Promise<DashboardDa
 
   const where = { organizationId: ctx.organizationId, archivedAt: null };
 
-  const [upcoming, statusGroups, centerGroups, lateCount, inProgress] = await Promise.all([
+  const [upcoming, statusGroups, centerGroups, priorityGroups, lateCount, inProgress] = await Promise.all([
     prisma.shopScheduleItem.findMany({
       where: { ...where, scheduleDate: { gte: todayStart, lt: in7 } },
       orderBy: [{ scheduleDate: "asc" }, { priority: "desc" }],
@@ -35,6 +35,7 @@ export async function loadScheduling(ctx: DashboardContext): Promise<DashboardDa
     }),
     prisma.shopScheduleItem.groupBy({ by: ["status"], where, _count: { _all: true } }),
     prisma.shopScheduleItem.groupBy({ by: ["workCenter"], where, _count: { _all: true } }),
+    prisma.shopScheduleItem.groupBy({ by: ["priority"], where, _count: { _all: true } }),
     prisma.shopScheduleItem.count({
       where: { ...where, scheduleDate: { lt: todayStart }, status: { notIn: [...DONE_STATUSES] } }
     }),
@@ -98,6 +99,19 @@ export async function loadScheduling(ctx: DashboardContext): Promise<DashboardDa
         id: "status-mix",
         title: "Schedule status mix",
         segments: donutSegments
+      },
+      {
+        kind: "bar",
+        id: "by-priority",
+        title: "Scheduled items by priority",
+        items: ["WORK_STOPPAGE", "URGENT", "HIGH", "NORMAL", "LOW"]
+          .map((p) => {
+            const g = priorityGroups.find((row) => row.priority === p);
+            const count = g ? g._count._all : 0;
+            const tone: Tone = p === "WORK_STOPPAGE" || p === "URGENT" ? "red" : p === "HIGH" ? "amber" : "blue";
+            return { label: p.replaceAll("_", " "), value: count, tone };
+          })
+          .filter((i) => i.value > 0)
       }
     ]
   };
