@@ -3,6 +3,9 @@ import { departmentScopeForUser, requirePermission } from "@/lib/auth";
 import { decimalText, formatShortDate, getErpReferenceData } from "@/lib/erp-data";
 import { prisma } from "@/lib/prisma";
 import { ErpCreateForm } from "@/components/erp-create-form";
+import { OperationCompleteForm } from "./operation-complete-form";
+
+const DONE_OP_STATUSES = ["COMPLETE", "COMPLETED", "DONE", "CANCELLED", "CLOSED"];
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +25,15 @@ export default async function JobsPage() {
   const partOptions = refs.parts.map((part) => ({ label: `${part.partNumber} Rev ${part.revision}`, value: part.id }));
   const salesOrderOptions = refs.salesOrders.map((order) => ({ label: order.orderNumber, value: order.id }));
   const jobOptions = jobs.map((job) => ({ label: `${job.workOrderNumber} · ${job.title}`, value: job.id }));
+
+  const canManage = user.permissions.includes("erp:manage");
+  const woNumberById = new Map(jobs.map((job) => [job.id, job.workOrderNumber]));
+  const openOperationOptions = operations
+    .filter((op) => !DONE_OP_STATUSES.includes((op.status ?? "").toUpperCase()))
+    .map((op) => ({
+      id: op.id,
+      label: `${op.workOrderId ? woNumberById.get(op.workOrderId) ?? "WO" : "WO"} · op ${op.operationNumber} · ${op.workCenter}`
+    }));
 
   return (
     <>
@@ -50,8 +62,14 @@ export default async function JobsPage() {
       </div>
       <div className="grid two-col" style={{ marginTop: 14 }}>
         <section className="card"><div className="section-title"><h2>Work Orders</h2><span className="pill">{jobs.length}</span></div>{jobs.length ? <table className="table"><thead><tr><th>WO</th><th>Title</th><th>Qty</th><th>Due</th><th>Status</th><th>Material</th></tr></thead><tbody>{jobs.map((job) => <tr key={job.id}><td>{job.workOrderNumber}</td><td>{job.title}</td><td>{decimalText(job.quantity)}</td><td>{formatShortDate(job.dueDate)}</td><td>{job.status}</td><td>{job.materialStatus.replaceAll("_", " ")}</td></tr>)}</tbody></table> : <div className="empty">No work orders in your scope.</div>}</section>
-        <section className="card"><div className="section-title"><h2>Operation Queue</h2><span className="pill">{operations.length}</span></div>{operations.length ? <table className="table"><thead><tr><th>Op</th><th>Work Center</th><th>Description</th><th>Status</th><th>Hours</th></tr></thead><tbody>{operations.map((op) => <tr key={op.id}><td>{op.operationNumber}</td><td>{op.workCenter}</td><td>{op.description}</td><td>{op.status}</td><td>{decimalText(op.runHours)}</td></tr>)}</tbody></table> : <div className="empty">No operations have been added yet.</div>}</section>
+        <section className="card"><div className="section-title"><h2>Operation Queue</h2><span className="pill">{operations.length}</span></div>{operations.length ? <table className="table"><thead><tr><th>Op</th><th>Work Center</th><th>Description</th><th>Status</th><th style={{ textAlign: "right" }}>Plan h</th><th style={{ textAlign: "right" }}>Actual h</th><th style={{ textAlign: "right" }}>Qty done</th></tr></thead><tbody>{operations.map((op) => <tr key={op.id}><td>{op.operationNumber}</td><td>{op.workCenter}</td><td>{op.description}</td><td>{DONE_OP_STATUSES.includes((op.status ?? "").toUpperCase()) ? <span className="pill green">{op.status}</span> : op.status}</td><td style={{ textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{decimalText(op.runHours)}</td><td style={{ textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{op.actualRunHours != null ? decimalText(op.actualRunHours) : "—"}</td><td style={{ textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{op.completedQuantity != null ? decimalText(op.completedQuantity) : "—"}</td></tr>)}</tbody></table> : <div className="empty">No operations have been added yet.</div>}</section>
       </div>
+
+      {canManage ? (
+        <div className="grid two-col" style={{ marginTop: 14 }}>
+          <OperationCompleteForm operations={openOperationOptions} />
+        </div>
+      ) : null}
     </>
   );
 }
