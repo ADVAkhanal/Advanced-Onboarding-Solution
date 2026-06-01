@@ -3220,3 +3220,54 @@ model QuizAttemptAnswer {
   @@index([organizationId, attemptId])
   @@map("quiz_attempt_answers")
 }
+
+// ─── ProShop sync (read-only mirror) ──────────────────────────────────────
+// ProShop is the system of record. These tables hold a local, refreshable
+// MIRROR so dashboards stay fast and survive ProShop downtime. Never the
+// source of truth; every row carries sync provenance.
+
+// One row per ProShop work order, keyed by its external number. Refreshed by
+// the read-only sync engine; rows not seen in a run are marked STALE, not
+// deleted (AS9100D retention posture).
+model ProShopWorkOrderRef {
+  id               String    @id @default(cuid())
+  organizationId   String
+  source           String    @default("proshop")
+  externalNumber   String
+  status           String?
+  customerName     String?
+  partNumber       String?
+  dueAt            DateTime?
+  mustLeaveBy      DateTime?
+  estValue         Decimal?  @db.Decimal(14, 2)
+  rawHash          String?
+  syncStatus       String    @default("synced") // synced | stale
+  syncedAt         DateTime?
+  dataClassification String  @default("internal")
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@unique([organizationId, source, externalNumber])
+  @@index([organizationId, syncStatus])
+  @@index([organizationId, dueAt])
+  @@map("proshop_work_order_refs")
+}
+
+// Observable sync state: one row per sync run.
+model ProShopSyncRun {
+  id              String    @id @default(cuid())
+  organizationId  String
+  module          String    @default("work_orders")
+  trigger         String    @default("manual") // manual | cron
+  status          String    @default("running") // running | success | failed
+  recordsSeen     Int       @default(0)
+  recordsUpserted Int       @default(0)
+  recordsStale    Int       @default(0)
+  error           String?
+  startedAt       DateTime  @default(now())
+  finishedAt      DateTime?
+  triggeredById   String?
+
+  @@index([organizationId, module, startedAt])
+  @@map("proshop_sync_runs")
+}
