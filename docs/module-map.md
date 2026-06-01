@@ -49,7 +49,9 @@ Snapshot of the production modules in the Advanced Shop Management & Onboarding 
 | **Quality** | `/erp/quality` | `/api/erp/quality`, `/api/erp/nonconformance` | `QualityInspection`, `NonconformanceRecord` |
 | **Shop-floor time** | `/erp/shop-floor` | `/api/erp/time-entries` | `TimeEntry` |
 | **Documents** | `/erp/documents` | `/api/erp/documents` | `DocumentRecord` |
-| **Analytics dashboards** | `/erp/dashboards`, `/erp/dashboards/[key]`, `/erp/dashboards/[key]/print` | `/api/erp/dashboards/[key]/export.csv` | Read-only over existing models (Quote, WorkOrderOperation, ShopScheduleItem, QualityInspection, NonconformanceRecord, Part). Dynamic engine; CSV + PDF export. See `docs/dashboards.md`. |
+| **Analytics dashboards** | `/erp/dashboards`, `/erp/dashboards/[key]`, `/erp/dashboards/[key]/print` | `/api/erp/dashboards/[key]/export.csv` | Read-only over existing models (Quote, WorkOrderOperation, ShopScheduleItem, QualityInspection, NonconformanceRecord, Part) plus live ProShop. 7 dashboards; dynamic engine; CSV + PDF export. See `docs/dashboards.md`. |
+| **Work center capacity** | `/erp/work-centers` | `/api/erp/work-centers` | `WorkCenter` — weekly capacity per center; powers Advanced Capacity util = load ÷ capacity. |
+| **ProShop integration** | (ProShop Backlog dashboard) | `src/lib/proshop/*` | Read-only ProShop GraphQL pull, env-gated. See `docs/proshop-integration.md`. |
 
 ---
 

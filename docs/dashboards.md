@@ -62,6 +62,16 @@ surfaced in-UI. Correct any that differ from the originals.)
 | `pk-gant` | PK Gantt | WorkOrderOperation | CSS Gantt timeline, overdue bars |
 | `first-piece` | First-Piece Run Tracker | QualityInspection, NonconformanceRecord | FAI pass rate, overdue inspections, NCRs by severity |
 | `npi` | NPI Dashboard | Part, QuoteLine, WorkOrder | New parts (90d) funnel New → Quoted → In production |
+| `proshop-backlog` | ProShop Backlog | ProShop GraphQL (live) | Active work orders, backlog value, overdue, due-soon, by customer. See `docs/proshop-integration.md`. |
+
+The source repos were read this round (public). They are upload-driven
+Express/Postgres trackers, so these live-ERP versions are modernizations
+that match the real metric definitions: Sales-Advanced is a monthly
+target-vs-actual KPI sheet (we add a monthly quote trend + machine
+plan-vs-actual hours); AdvancedCapacity/Scheduling are an MPS
+capacity-vs-load model (we added the WorkCenter capacity table and
+util = load ÷ capacity); First-Piece-Run-Tracker is a First Pass Yield
+log (we added FPY); PK-GANT is a Gantt; npi-dashboard is an NPI funnel.
 
 ---
 
