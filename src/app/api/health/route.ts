@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
+import { checkEnv } from "@/lib/env";
 import { prisma } from "@/lib/prisma";
+import { isProShopConfigured } from "@/lib/proshop/client";
 import { pushoverStatus } from "@/lib/pushover";
 import { PRODUCT_NAME } from "@/lib/reference-data";
 
@@ -16,11 +18,22 @@ export async function GET() {
     }
   }
 
+  const env = checkEnv();
   const pushover = pushoverStatus();
+  // Readiness = can serve real traffic: DB reachable and required env present.
+  const ready = databaseConnected && env.ok;
+
   return NextResponse.json({
-    status: databaseConnected ? "ok" : "degraded",
+    status: ready ? "ok" : "degraded",
+    ready,
     appName: PRODUCT_NAME,
     databaseConnected,
+    env: { ok: env.ok, missing: env.missing },
+    integrations: {
+      proshopConfigured: isProShopConfigured(),
+      cronConfigured: Boolean(process.env.CRON_SECRET?.trim()),
+      pushoverEnabled: pushover.enabled
+    },
     timestamp: new Date().toISOString(),
     pushoverEnabled: pushover.enabled,
     recipientCount: pushover.recipientCount,

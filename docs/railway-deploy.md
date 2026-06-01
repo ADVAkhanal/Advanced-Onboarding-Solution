@@ -8,9 +8,24 @@ How to run the Advanced Shop Management platform on Railway.
 
 ## TL;DR
 
-- **Postgres: required.** Add a Railway PostgreSQL service; reference its URL as `DATABASE_URL`.
-- **Volume: not required.** Nothing writes to local disk; the customer PDF is browser-printed, not server-generated. (Add object storage, not a volume, if you later persist uploads.)
+- **Postgres: required and primary.** Add a Railway PostgreSQL service; reference its URL as `DATABASE_URL`. Do **not** use a Railway volume as the primary database.
+- **Volume: not required.** Nothing writes to local disk; the customer PDF is browser-printed, not server-generated. Use a volume only for temporary files or generated exports if object storage is not configured — never for the database.
 - Migrations auto-apply on deploy (already wired in `railway.json`).
+- **Startup env validation**: `src/instrumentation.ts` runs `validateEnv()` on boot and logs missing/weak env (fail-soft — it logs loudly rather than crashing into a boot loop).
+- **Readiness**: `GET /health` returns `ready: true` only when the DB is reachable AND required env is present, plus an `integrations` block (proshopConfigured, cronConfigured, pushoverEnabled).
+
+## Scheduled jobs (Railway cron)
+
+Set `CRON_SECRET` to a strong random value. Configure a Railway cron service
+(or any external scheduler) to call the sync endpoint with the secret header:
+
+```
+POST https://<your-app>/api/cron/proshop-sync
+Header: x-cron-secret: <CRON_SECRET>
+```
+
+Leave `CRON_SECRET` blank to disable scheduled sync entirely (the endpoint
+then returns 503).
 
 ---
 
