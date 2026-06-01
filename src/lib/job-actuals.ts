@@ -15,6 +15,31 @@ export type CycleBucket = {
 };
 
 /**
+ * Convert a completed work-order operation's actuals into the JobActual
+ * shape. Per-piece cycle = total run minutes / completed quantity; setup
+ * is taken as-is. Returns null when there's nothing usable to record
+ * (no completed quantity, or no run hours), so callers skip the JobActual.
+ *
+ * Pure — no DB, no clock. Unit-tested.
+ */
+export function deriveOperationActual(input: {
+  actualSetupHours: number;
+  actualRunHours: number;
+  completedQuantity: number;
+}): { setupHours: number; cycleMinutesPerPiece: number } | null {
+  const qty = input.completedQuantity;
+  if (!(qty > 0)) return null;
+  const setup = Math.max(0, input.actualSetupHours || 0);
+  const run = Math.max(0, input.actualRunHours || 0);
+  if (run <= 0 && setup <= 0) return null;
+  const cycleMinutesPerPiece = (run * 60) / qty;
+  return {
+    setupHours: Math.round(setup * 100) / 100,
+    cycleMinutesPerPiece: Math.round(cycleMinutesPerPiece * 1000) / 1000
+  };
+}
+
+/**
  * Recompute the CycleTimeLookup for a bucket from all non-excluded,
  * non-archived JobActuals in that bucket, and upsert it as DERIVED.
  *

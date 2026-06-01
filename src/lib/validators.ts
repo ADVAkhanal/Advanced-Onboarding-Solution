@@ -322,6 +322,17 @@ export const erpQuoteConvertSchema = z.object({
   notes: z.string().trim().max(2000).optional()
 });
 
+// Completing a work-order operation. Captures actuals; when the work
+// order's part has a full manufacturing bucket, completion auto-derives a
+// JobActual and refreshes the matching cycle-time lookup.
+export const erpOperationCompleteSchema = z.object({
+  actualSetupHours: z.coerce.number().min(0).max(9999),
+  actualRunHours: z.coerce.number().min(0).max(99999),
+  completedQuantity: z.coerce.number().min(0).max(1_000_000),
+  completedAt: optionalDate,
+  notes: optionalText
+});
+
 // Recording a completed-job actual. Same bucket key as the lookup;
 // recording one recomputes the matching lookup as DERIVED.
 export const erpJobActualCreateSchema = z.object({

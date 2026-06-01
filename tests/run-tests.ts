@@ -6,6 +6,7 @@ import { chunkSopText } from "../src/lib/ai/chunker";
 import { __testHooks } from "../src/lib/ai/sop-answerer";
 import { estimateLine } from "../src/lib/quoting";
 import { aggregateActuals } from "../src/lib/cycle-time-aggregation";
+import { deriveOperationActual } from "../src/lib/job-actuals";
 import { csvCell, toCsv } from "../src/lib/export/csv";
 
 const mode = process.argv[2] ?? "all";
@@ -155,6 +156,28 @@ async function runUnit() {
   assert.equal(csv, 'Name,Qty\n"Widget, A",3\nBracket,10');
   // Header-only when no rows.
   assert.equal(toCsv([{ key: "x", label: "X" }], []), "X");
+
+  // Operation-actual derivation (completion → cycle-time feedback).
+  // 100 pieces in 5 run hours = 300 min / 100 = 3.0 min/pc; setup as-is.
+  const opDerive = deriveOperationActual({ actualSetupHours: 1.5, actualRunHours: 5, completedQuantity: 100 });
+  assert.ok(opDerive);
+  assert.equal(opDerive!.setupHours, 1.5);
+  assert.equal(opDerive!.cycleMinutesPerPiece, 3);
+  // Zero completed quantity → null (cannot derive per-piece cycle).
+  assert.equal(
+    deriveOperationActual({ actualSetupHours: 2, actualRunHours: 4, completedQuantity: 0 }),
+    null
+  );
+  // No run and no setup → null (nothing to record).
+  assert.equal(
+    deriveOperationActual({ actualSetupHours: 0, actualRunHours: 0, completedQuantity: 10 }),
+    null
+  );
+  // Setup-only operation (e.g. inspection) still records, cycle = 0.
+  const setupOnly = deriveOperationActual({ actualSetupHours: 0.5, actualRunHours: 0, completedQuantity: 5 });
+  assert.ok(setupOnly);
+  assert.equal(setupOnly!.cycleMinutesPerPiece, 0);
+  assert.equal(setupOnly!.setupHours, 0.5);
 
   // Cycle-time aggregation (feedback loop).
   // No samples → null (caller keeps prior estimate).
