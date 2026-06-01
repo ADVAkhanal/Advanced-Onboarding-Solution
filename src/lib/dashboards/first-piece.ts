@@ -42,11 +42,23 @@ export async function loadFirstPiece(ctx: DashboardContext): Promise<DashboardDa
     ]
   };
 
+  const inspectionSelect = {
+    id: true,
+    inspectionNumber: true,
+    partId: true,
+    workOrderId: true,
+    inspectionType: true,
+    result: true,
+    status: true,
+    dueDate: true,
+    createdAt: true
+  } as const;
+
   let inspections = await prisma.qualityInspection.findMany({
     where: firstArticleWhere,
     orderBy: [{ dueDate: "asc" }, { updatedAt: "desc" }],
-    take: 200,
-    select: { id: true, inspectionNumber: true, partId: true, workOrderId: true, inspectionType: true, result: true, status: true, dueDate: true }
+    take: 500,
+    select: inspectionSelect
   });
   let scopedToFirstArticle = true;
   if (inspections.length === 0) {
@@ -54,10 +66,31 @@ export async function loadFirstPiece(ctx: DashboardContext): Promise<DashboardDa
     inspections = await prisma.qualityInspection.findMany({
       where,
       orderBy: [{ dueDate: "asc" }, { updatedAt: "desc" }],
-      take: 200,
-      select: { id: true, inspectionNumber: true, partId: true, workOrderId: true, inspectionType: true, result: true, status: true, dueDate: true }
+      take: 500,
+      select: inspectionSelect
     });
   }
+
+  // First Pass Yield: did the FIRST inspection of each work order pass?
+  // QualityInspection has no per-run number, so the earliest inspection per
+  // work order is the proxy for the first run. FPY = firstPass / decided.
+  const firstByWo = new Map<string, { result: string | null; createdAt: Date }>();
+  for (const i of inspections) {
+    if (!i.workOrderId) continue;
+    const prev = firstByWo.get(i.workOrderId);
+    if (!prev || i.createdAt.getTime() < prev.createdAt.getTime()) {
+      firstByWo.set(i.workOrderId, { result: i.result, createdAt: i.createdAt });
+    }
+  }
+  let firstPass = 0;
+  let firstFail = 0;
+  for (const v of firstByWo.values()) {
+    const b = resultBucket(v.result);
+    if (b === "PASS") firstPass += 1;
+    else if (b === "FAIL") firstFail += 1;
+  }
+  const fpyDecided = firstPass + firstFail;
+  const fpy = fpyDecided > 0 ? Math.round((firstPass / fpyDecided) * 100) : null;
 
   let pass = 0;
   let fail = 0;
@@ -98,12 +131,15 @@ export async function loadFirstPiece(ctx: DashboardContext): Promise<DashboardDa
   ].filter((s) => s.value > 0);
 
   return {
-    note: scopedToFirstArticle
-      ? "Scoped to first-article / FAI inspections (AS9102 first-piece context)."
-      : "No first-article inspection types found — showing all quality inspections.",
+    note: `${scopedToFirstArticle ? "Scoped to first-article / FAI inspections (AS9102 first-piece context). " : "No first-article inspection types found — showing all quality inspections. "}First Pass Yield uses the earliest inspection per work order as the first-run proxy (QualityInspection has no per-run number).`,
     kpis: [
-      { label: "Open inspections", value: open.length, note: scopedToFirstArticle ? "First-article" : "All types", tone: "blue" },
-      { label: "Pass rate", value: passRate === null ? "—" : `${passRate}%`, note: `${pass} pass · ${fail} fail`, tone: passRate !== null && passRate >= 90 ? "green" : "amber" },
+      {
+        label: "First Pass Yield",
+        value: fpy === null ? "—" : `${fpy}%`,
+        note: fpyDecided > 0 ? `${firstPass}/${fpyDecided} passed first run` : "No first runs decided",
+        tone: fpy !== null && fpy >= 95 ? "green" : fpy !== null && fpy >= 85 ? "amber" : "red"
+      },
+      { label: "Pass rate (all runs)", value: passRate === null ? "—" : `${passRate}%`, note: `${pass} pass · ${fail} fail`, tone: passRate !== null && passRate >= 90 ? "green" : "amber" },
       { label: "Overdue inspections", value: overdue, note: "Past due, not done", tone: overdue > 0 ? "red" : "green" },
       { label: "Open NCRs", value: openNcrs, note: "Nonconformances", tone: openNcrs > 0 ? "red" : "green" }
     ],
@@ -111,9 +147,18 @@ export async function loadFirstPiece(ctx: DashboardContext): Promise<DashboardDa
       {
         kind: "donut",
         id: "result-mix",
-        title: "Inspection result mix",
+        title: "Inspection result mix (all runs)",
         centerLabel: `${inspections.length}`,
         segments: donutSegments
+      },
+      {
+        kind: "bar",
+        id: "first-pass-outcome",
+        title: "First-run outcome by work order",
+        items: [
+          { label: "Passed first run", value: firstPass, tone: "green" as Tone },
+          { label: "Failed first run", value: firstFail, tone: "red" as Tone }
+        ].filter((i) => i.value > 0)
       },
       {
         kind: "table",
