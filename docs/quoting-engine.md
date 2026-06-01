@@ -39,7 +39,10 @@ Migration: `prisma/migrations/20260528160000_quoting_engine_manufacturing/`
 
 ### The feedback loop
 
-This is the moat. Recording a `JobActual` (at `/erp/quotes/cycle-times`, permission `jobactual:record`) appends an immutable actual and, in the same transaction, recomputes the matching `CycleTimeLookup` from **all** non-excluded actuals in that bucket — marking it `source = DERIVED`.
+This is the moat. A `JobActual` enters two ways, both of which recompute the matching `CycleTimeLookup` from **all** non-excluded actuals in that bucket (marking it `source = DERIVED`) inside one transaction:
+
+1. **Manual** — record at `/erp/quotes/cycle-times` (`jobactual:record`).
+2. **Automatic** — complete a work-order operation at `/erp/jobs` (`erp:manage`). When the work order's part carries a full bucket, completion derives a `JobActual` from the operation's actual setup/run hours and completed quantity (`deriveOperationActual`: per-piece cycle = run minutes / qty), with no manual step. Operations whose part lacks a bucket still complete cleanly; they just don't update an estimate.
 
 - Math lives in `src/lib/cycle-time-aggregation.ts` → `aggregateActuals()` (pure, unit-tested): quantity-weighted cycle mean, simple setup mean, confidence = `min(1, n/20) × clamp(1 - CV, 0.3, 1)`.
 - Recompute/persist lives in `src/lib/job-actuals.ts` → `recomputeLookupFromActuals()` (shared by the record endpoint and any future batch importer).
@@ -83,6 +86,8 @@ Catalog in `src/lib/permissions.ts`:
 | Convert to sales order | `POST /api/erp/quotes/[id]/convert` | `quote:submit` |
 | Upsert cycle-time lookup | `POST /api/erp/cycle-times` | `cycletime:manage` |
 | Record job actual (recomputes lookup) | `POST /api/erp/job-actuals` | `jobactual:record` |
+| Complete operation (auto-feeds lookup) | `POST /api/erp/operations/[id]/complete` | `erp:manage` |
+| Quotes list CSV export | `GET /api/erp/quotes/export.csv?status=` | `erp:view` |
 
 Every mutation appends to `AuditLog` via `recordAudit`.
 
@@ -141,11 +146,11 @@ ALLOW_DEMO_SEED=true npm run seed:demo
 2. Normalize `Quote ↔ QuoteLine` and `Quote ↔ CycleTimeLookup` Prisma relations.
 3. Customer-facing PDF render of a quote.
 4. Quote line **edit/delete** (currently add-only).
-5. **Auto-capture `JobActual` from completed `WorkOrder`s** — actuals are logged manually today (`/erp/quotes/cycle-times`). Deriving them from WorkOrder/WorkOrderOperation completion (or a ProShop/FASTEMS pull) removes the manual step. The recompute path (`recomputeLookupFromActuals`) is already reusable.
-6. **"Pinned" lookup flag** — let a manager protect a deliberate MANUAL estimate from being superseded by DERIVED recompute.
-7. **JobActual review/exclude UI** — `excludedFromAggregation` exists in the schema but has no UI yet to flag an anomalous run.
+5. **"Pinned" lookup flag** — let a manager protect a deliberate MANUAL estimate from being superseded by DERIVED recompute.
+6. **JobActual review/exclude UI** — `excludedFromAggregation` exists in the schema but has no UI yet to flag an anomalous run.
+7. **ProShop/FASTEMS pull** — auto-create operations/actuals from machine-monitoring or the system of record, rather than manual operation completion.
 
-✅ Done since first draft: the actuals → cycle-time feedback loop (manual logging), estimate provenance (SEED/MANUAL/DERIVED), confidence scoring.
+✅ Done since first draft: manual + **automatic** (work-order operation completion) actuals → cycle-time feedback loop; estimate provenance (SEED/MANUAL/DERIVED); confidence scoring; WorkOrderOperation actuals capture.
 
 ---
 
