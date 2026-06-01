@@ -306,6 +306,33 @@ async function main() {
   }
 
   console.log(`Seeded ${CYCLE_TIME_SEEDS.length} cycle-time lookup buckets.`);
+
+  // Work centers with weekly capacity, so the Advanced Capacity dashboard
+  // can compute real load-vs-capacity. Codes are illustrative; align with
+  // the workCenter values your operations actually use.
+  const WORK_CENTERS: Array<{ code: string; name: string; capacityHoursPerWeek: number }> = [
+    { code: "SWISS-1", name: "Swiss Turning Cell 1", capacityHoursPerWeek: 120 },
+    { code: "CNC-LATHE", name: "CNC Turning", capacityHoursPerWeek: 80 },
+    { code: "CNC-MILL", name: "CNC Milling", capacityHoursPerWeek: 80 },
+    { code: "MULTI-SPINDLE", name: "Multi-Spindle", capacityHoursPerWeek: 60 },
+    { code: "GRIND", name: "Grinding", capacityHoursPerWeek: 40 },
+    { code: "INSPECT", name: "Inspection / CMM", capacityHoursPerWeek: 40 }
+  ];
+  for (const wc of WORK_CENTERS) {
+    await prisma.workCenter.upsert({
+      where: { organizationId_code: { organizationId: organization.id, code: wc.code } },
+      create: {
+        organizationId: organization.id,
+        code: wc.code,
+        name: wc.name,
+        capacityHoursPerWeek: wc.capacityHoursPerWeek,
+        createdById: manager.id,
+        updatedById: manager.id
+      },
+      update: { name: wc.name, capacityHoursPerWeek: wc.capacityHoursPerWeek, updatedById: manager.id }
+    });
+  }
+  console.log(`Seeded ${WORK_CENTERS.length} work centers.`);
 }
 
 main()

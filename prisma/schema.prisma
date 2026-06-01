@@ -2365,6 +2365,30 @@ model WorkOrderOperation {
   @@map("work_order_operations")
 }
 
+// WorkCenter capacity. The free-text WorkOrderOperation.workCenter joins
+// to WorkCenter.code; capacityHoursPerWeek powers real load-vs-capacity
+// utilization on the Advanced Capacity dashboard (mirrors the mps_workcenters
+// model in the source AdvancedCapacity app). No capacity row => the
+// dashboard falls back to a nominal default.
+model WorkCenter {
+  id                   String   @id @default(cuid())
+  organizationId       String
+  code                 String
+  name                 String?
+  capacityHoursPerWeek Decimal  @default(40) @db.Decimal(8, 2)
+  status               String   @default("ACTIVE")
+  notes                String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  createdById          String?
+  updatedById          String?
+  archivedAt           DateTime?
+
+  @@unique([organizationId, code])
+  @@index([organizationId, status])
+  @@map("work_centers")
+}
+
 model ShopScheduleItem {
   id             String    @id @default(cuid())
   organizationId String
