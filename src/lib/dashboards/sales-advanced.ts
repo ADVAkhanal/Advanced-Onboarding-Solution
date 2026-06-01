@@ -26,7 +26,19 @@ function statusTone(status: string): Tone {
 export async function loadSalesAdvanced(ctx: DashboardContext): Promise<DashboardData> {
   const where = { organizationId: ctx.organizationId, archivedAt: null };
 
-  const [statusGroups, openValue, quotes, orderCount, customers] = await Promise.all([
+  // Last 6 month buckets (oldest → newest) for the trend.
+  const now = new Date();
+  const monthKeys: Array<{ key: string; label: string }> = [];
+  for (let i = 5; i >= 0; i -= 1) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    monthKeys.push({
+      key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`,
+      label: new Intl.DateTimeFormat("en", { month: "short" }).format(d)
+    });
+  }
+  const trendSince = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+
+  const [statusGroups, openValue, quotes, orderCount, customers, trendQuotes, opsAgg] = await Promise.all([
     prisma.quote.groupBy({ by: ["status"], where, _count: { _all: true }, _sum: { estimatedValue: true } }),
     prisma.quote.aggregate({
       where: { ...where, status: { in: OPEN_STATUSES } },
@@ -39,7 +51,15 @@ export async function loadSalesAdvanced(ctx: DashboardContext): Promise<Dashboar
       select: { id: true, quoteNumber: true, title: true, customerId: true, status: true, estimatedValue: true, updatedAt: true }
     }),
     prisma.salesOrder.count({ where: { ...where, status: { notIn: ["CLOSED", "CANCELLED"] } } }),
-    prisma.customerAccount.findMany({ where, select: { id: true, name: true } })
+    prisma.customerAccount.findMany({ where, select: { id: true, name: true } }),
+    prisma.quote.findMany({
+      where: { ...where, createdAt: { gte: trendSince } },
+      select: { createdAt: true, estimatedValue: true, status: true }
+    }),
+    prisma.workOrderOperation.aggregate({
+      where: { organizationId: ctx.organizationId, archivedAt: null },
+      _sum: { runHours: true, actualRunHours: true }
+    })
   ]);
 
   const countByStatus = new Map(statusGroups.map((g) => [g.status, g._count._all]));
@@ -79,6 +99,25 @@ export async function loadSalesAdvanced(ctx: DashboardContext): Promise<Dashboar
     .sort((a, b) => b.value - a.value)
     .slice(0, 8);
 
+  // Monthly trend buckets.
+  const trendByMonth = new Map<string, { count: number; value: number; wonValue: number }>();
+  for (const mk of monthKeys) trendByMonth.set(mk.key, { count: 0, value: 0, wonValue: 0 });
+  for (const q of trendQuotes) {
+    const key = `${q.createdAt.getFullYear()}-${String(q.createdAt.getMonth() + 1).padStart(2, "0")}`;
+    const b = trendByMonth.get(key);
+    if (!b) continue;
+    const v = q.estimatedValue ? Number(q.estimatedValue) : 0;
+    b.count += 1;
+    b.value += v;
+    if (q.status === "WON") b.wonValue += v;
+  }
+
+  // Machine hours: planned vs actual run hours across operations.
+  const planHours = opsAgg._sum.runHours ? Number(opsAgg._sum.runHours) : 0;
+  const actualHours = opsAgg._sum.actualRunHours ? Number(opsAgg._sum.actualRunHours) : 0;
+  const hoursVariancePct =
+    planHours > 0 ? Math.round(((actualHours - planHours) / planHours) * 100) : null;
+
   const STATUS_ORDER = ["DRAFT", "QUOTED", "WON", "LOST", "ON_HOLD", "EXPIRED"];
   const donutSegments: DonutSegment[] = STATUS_ORDER.filter((s) => (countByStatus.get(s) ?? 0) > 0).map(
     (s) => ({ label: `${s.replaceAll("_", " ")} (${countByStatus.get(s)})`, value: countByStatus.get(s) ?? 0, tone: statusTone(s) })
@@ -94,9 +133,46 @@ export async function loadSalesAdvanced(ctx: DashboardContext): Promise<Dashboar
         tone: winRate !== null && winRate >= 50 ? "green" : "amber"
       },
       { label: "Open sales orders", value: orderCount, note: "Not closed/cancelled", tone: "cyan" },
-      { label: "Avg quote value", value: usd(avgQuote), note: `${totalQuotes} quotes`, tone: "blue" }
+      {
+        label: "Machine hours (plan vs actual)",
+        value: `${Math.round(actualHours)} / ${Math.round(planHours)} h`,
+        note: hoursVariancePct === null ? "No planned hours" : `${hoursVariancePct > 0 ? "+" : ""}${hoursVariancePct}% vs plan`,
+        tone: hoursVariancePct === null ? "blue" : Math.abs(hoursVariancePct) <= 10 ? "green" : "amber"
+      }
     ],
     widgets: [
+      {
+        kind: "table",
+        id: "monthly-trend",
+        title: "Monthly quote trend (last 6 months)",
+        columns: [
+          { key: "month", label: "Month" },
+          { key: "count", label: "Quotes", numeric: true },
+          { key: "value", label: "Quoted value (USD)", numeric: true },
+          { key: "wonValue", label: "Won value (USD)", numeric: true }
+        ],
+        rows: monthKeys.map((mk) => {
+          const b = trendByMonth.get(mk.key)!;
+          return {
+            month: mk.label,
+            count: b.count,
+            value: Math.round(b.value),
+            wonValue: Math.round(b.wonValue)
+          };
+        }),
+        emptyLabel: "No quotes in the last 6 months."
+      },
+      {
+        kind: "bar",
+        id: "quoted-value-by-month",
+        title: "Quoted value by month",
+        unit: "$",
+        items: monthKeys.map((mk) => ({
+          label: mk.label,
+          value: Math.round(trendByMonth.get(mk.key)!.value),
+          tone: "blue"
+        }))
+      },
       {
         kind: "bar",
         id: "value-by-status",
