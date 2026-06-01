@@ -322,6 +322,14 @@ export const erpQuoteConvertSchema = z.object({
   notes: z.string().trim().max(2000).optional()
 });
 
+// Work center capacity upsert (by code).
+export const erpWorkCenterSchema = z.object({
+  code: z.string().trim().min(1).max(60),
+  name: z.string().trim().max(120).optional(),
+  capacityHoursPerWeek: z.coerce.number().min(0).max(10000),
+  notes: optionalText
+});
+
 // Completing a work-order operation. Captures actuals; when the work
 // order's part has a full manufacturing bucket, completion auto-derives a
 // JobActual and refreshes the matching cycle-time lookup.
