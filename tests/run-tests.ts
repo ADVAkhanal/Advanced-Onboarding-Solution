@@ -9,6 +9,7 @@ import { aggregateActuals } from "../src/lib/cycle-time-aggregation";
 import { deriveOperationActual } from "../src/lib/job-actuals";
 import { csvCell, toCsv } from "../src/lib/export/csv";
 import { parseProShopDate } from "../src/lib/proshop/work-orders";
+import { averageAgeDays, maxAgeDays, onTimeRate, reworkRate, utilizationPct } from "../src/lib/metrics";
 
 const mode = process.argv[2] ?? "all";
 
@@ -192,6 +193,27 @@ async function runUnit() {
   assert.equal(parseProShopDate("2026-01-15T00:00:00.000Z")?.toISOString(), "2026-01-15T00:00:00.000Z");
   // Garbage → null.
   assert.equal(parseProShopDate("not-a-date"), null);
+
+  // Machine-shop metric helpers.
+  assert.equal(utilizationPct(80, 40), 200);
+  assert.equal(utilizationPct(20, 40), 50);
+  assert.equal(utilizationPct(10, 0), 0); // no divide-by-zero
+  assert.equal(reworkRate(0, 0), null); // nothing decided
+  assert.equal(reworkRate(3, 12), 25);
+  assert.equal(onTimeRate([]), null);
+  assert.equal(onTimeRate([{ completedAtMs: 5, dueMs: null }]), null);
+  assert.equal(
+    onTimeRate([
+      { completedAtMs: 10, dueMs: 20 },
+      { completedAtMs: 30, dueMs: 20 },
+      { completedAtMs: 5, dueMs: null }
+    ]),
+    50
+  );
+  const metricsNow = 10 * 86_400_000;
+  assert.equal(averageAgeDays([8 * 86_400_000, 2 * 86_400_000], metricsNow), 5);
+  assert.equal(maxAgeDays([8 * 86_400_000, 2 * 86_400_000], metricsNow), 8);
+  assert.equal(averageAgeDays([], metricsNow), null);
 
   // Cycle-time aggregation (feedback loop).
   // No samples → null (caller keeps prior estimate).

@@ -6,6 +6,7 @@ import { loadPkGant } from "./pk-gant";
 import { loadProShopBacklog } from "./proshop-backlog";
 import { loadSalesAdvanced } from "./sales-advanced";
 import { loadScheduling } from "./scheduling";
+import { loadShopHealth } from "./shop-health";
 
 /**
  * Dashboard registry. Each entry is a self-contained, data-driven
@@ -81,6 +82,14 @@ export const DASHBOARDS: DashboardDef[] = [
     inspiredBy: "ADVAkhanal/IT-Dashboard (ProShop GraphQL)",
     permission: "report:view",
     load: loadProShopBacklog
+  },
+  {
+    key: "shop-health",
+    title: "Shop Floor Health",
+    eyebrow: "Analytics · Operations",
+    description: "Operational vitals: utilization, remaining time, late risk, bottlenecks, reject/rework rate, inspection queue aging, and schedule adherence.",
+    permission: "report:view",
+    load: loadShopHealth
   }
 ];
 
