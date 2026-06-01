@@ -8,6 +8,7 @@ import { estimateLine } from "../src/lib/quoting";
 import { aggregateActuals } from "../src/lib/cycle-time-aggregation";
 import { deriveOperationActual } from "../src/lib/job-actuals";
 import { csvCell, toCsv } from "../src/lib/export/csv";
+import { parseProShopDate } from "../src/lib/proshop/work-orders";
 
 const mode = process.argv[2] ?? "all";
 
@@ -178,6 +179,19 @@ async function runUnit() {
   assert.ok(setupOnly);
   assert.equal(setupOnly!.cycleMinutesPerPiece, 0);
   assert.equal(setupOnly!.setupHours, 0.5);
+
+  // ProShop date parsing (epoch seconds, epoch millis, ISO, empty).
+  assert.equal(parseProShopDate(null), null);
+  assert.equal(parseProShopDate(""), null);
+  assert.equal(parseProShopDate(undefined), null);
+  // Epoch seconds (< 1e12) are scaled to millis.
+  assert.equal(parseProShopDate(1_700_000_000)?.getTime(), 1_700_000_000_000);
+  // Epoch millis (> 1e12) pass through.
+  assert.equal(parseProShopDate(1_700_000_000_000)?.getTime(), 1_700_000_000_000);
+  // ISO string parses.
+  assert.equal(parseProShopDate("2026-01-15T00:00:00.000Z")?.toISOString(), "2026-01-15T00:00:00.000Z");
+  // Garbage → null.
+  assert.equal(parseProShopDate("not-a-date"), null);
 
   // Cycle-time aggregation (feedback loop).
   // No samples → null (caller keeps prior estimate).

@@ -3,6 +3,7 @@ import { loadAdvancedCapacity } from "./advanced-capacity";
 import { loadFirstPiece } from "./first-piece";
 import { loadNpi } from "./npi";
 import { loadPkGant } from "./pk-gant";
+import { loadProShopBacklog } from "./proshop-backlog";
 import { loadSalesAdvanced } from "./sales-advanced";
 import { loadScheduling } from "./scheduling";
 
@@ -71,6 +72,15 @@ export const DASHBOARDS: DashboardDef[] = [
     inspiredBy: "ADVAkhanal/npi-dashboard",
     permission: "report:view",
     load: loadNpi
+  },
+  {
+    key: "proshop-backlog",
+    title: "ProShop Backlog",
+    eyebrow: "Analytics · ProShop (live)",
+    description: "Live, read-only active work orders pulled from ProShop — backlog value, overdue, due-soon, by customer.",
+    inspiredBy: "ADVAkhanal/IT-Dashboard (ProShop GraphQL)",
+    permission: "report:view",
+    load: loadProShopBacklog
   }
 ];
 
