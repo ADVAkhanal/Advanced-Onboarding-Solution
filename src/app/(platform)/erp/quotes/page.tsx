@@ -229,6 +229,12 @@ export default async function QuotesPage({
           </p>
         </div>
         <div className="actions">
+          <a
+            className="button"
+            href={`/api/erp/quotes/export.csv${activeStatus !== "ALL" ? `?status=${activeStatus}` : ""}`}
+          >
+            Export CSV
+          </a>
           {user.permissions.includes("cycletime:view") ? (
             <Link className="button" href="/erp/quotes/cycle-times">
               Cycle-time lookups
