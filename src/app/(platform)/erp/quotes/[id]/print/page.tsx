@@ -1,10 +1,9 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requirePermission } from "@/lib/auth";
 import { formatShortDate } from "@/lib/erp-data";
 import { prisma } from "@/lib/prisma";
 import { complexityLabel, diameterLabel, materialLabel, processLabel } from "@/lib/quoting";
-import { PrintButton } from "./print-button";
+import { PrintDocument, PrintToolbar } from "@/components/print-document";
 
 export const dynamic = "force-dynamic";
 
@@ -74,27 +73,33 @@ export default async function QuotePrintPage({ params }: { params: { id: string 
 
   return (
     <>
-      <div className="print-toolbar no-print">
-        <Link className="button" href={`/erp/quotes/${quote.id}`}>
-          ← Back to quote
-        </Link>
-        <PrintButton />
-      </div>
+      <PrintToolbar backHref={`/erp/quotes/${quote.id}`} backLabel="← Back to quote" />
 
-      <article className="print-document">
-        <header className="print-doc-header">
-          <div className="print-doc-brand">
-            <strong>{companyName}</strong>
-            <span>Precision Manufacturing Quotation</span>
-          </div>
-          <div className="print-doc-meta">
-            <div className="doc-title">Quote {quote.quoteNumber}</div>
+      <PrintDocument
+        company={companyName}
+        kicker="Precision Manufacturing Quotation"
+        title={`Quote ${quote.quoteNumber}`}
+        meta={
+          <>
             <div>Issued: {formatShortDate(quote.createdAt)}</div>
             <div>Valid until: {formatShortDate(quote.validUntil)}</div>
             <div>Status: {quote.status.replaceAll("_", " ")}</div>
-          </div>
-        </header>
-
+          </>
+        }
+        footer={
+          <>
+            <p>
+              This quotation is an estimate based on the information available at issue. Pricing is
+              valid until the date shown above and is subject to review of final drawings,
+              tolerances, and material certifications. Lead times are confirmed at order placement.
+            </p>
+            <p>
+              {companyName} · Quote {quote.quoteNumber} · Generated {formatShortDate(new Date())} ·
+              Not a tax invoice. No payment is processed through this document.
+            </p>
+          </>
+        }
+      >
         <section className="print-doc-grid">
           <div>
             <h4>Prepared for</h4>
@@ -174,19 +179,7 @@ export default async function QuotePrintPage({ params }: { params: { id: string 
           </table>
         </div>
 
-        <footer className="print-doc-footer">
-          <p>
-            This quotation is an estimate based on the information available at issue. Pricing is
-            valid until the date shown above and is subject to review of final drawings,
-            tolerances, and material certifications. Lead times are confirmed at order placement.
-          </p>
-          <p>
-            {companyName} · Quote {quote.quoteNumber} · Generated{" "}
-            {formatShortDate(new Date())} · Not a tax invoice. No payment is processed through
-            this document.
-          </p>
-        </footer>
-      </article>
+      </PrintDocument>
     </>
   );
 }
