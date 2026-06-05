@@ -2,23 +2,30 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Advanced PMC brand theme ────────────────────────────────────────────
+   60/30/10 rule (correct ratio is 60-30-10):
+     60 % — warm white / light warm gray  (content, cards)
+     30 % — Advanced Charcoal #1C1917     (sidebar, topbar, structure)
+     10 % — Advanced Red    #C8202E       (primary actions, active states)
+   Status colors (green / amber / danger-red) are unchanged.
+   ─────────────────────────────────────────────────────────────────────── */
 :root {
-  --ink: #071426;
-  --ink-2: #0b1c32;
-  --nav: #031224;
-  --nav-2: #061a31;
-  --line: #d7e1ee;
-  --muted: #66758c;
-  --text: #0f1b2d;
-  --blue: #006ef5;
-  --cyan: #00b7ff;
-  --green: #15a85b;
-  --amber: #f59e0b;
-  --red: #ef2d2d;
-  --card: #ffffff;
-  --bg: #f4f7fb;
-  --soft: #edf4fb;
-  --shadow: 0 18px 50px rgba(10, 27, 50, 0.08);
+  --ink:    #120E0C;          /* warm near-black (was blue-cast) */
+  --ink-2:  #1C1614;          /* dark warm (was blue-cast) */
+  --nav:    #1C1917;          /* Advanced Charcoal */
+  --nav-2:  #251F1C;          /* lighter charcoal for depth */
+  --line:   #DDD9D7;          /* warm border / divider */
+  --muted:  #7A7472;          /* warm neutral muted text */
+  --text:   #1C1614;          /* warm body text (was blue-navy) */
+  --blue:   #C8202E;          /* Advanced Red — primary action colour */
+  --cyan:   #D64A54;          /* lighter Advanced Red — secondary accent */
+  --green:  #15a85b;          /* status: healthy (unchanged) */
+  --amber:  #f59e0b;          /* status: warning (unchanged) */
+  --red:    #ef2d2d;          /* status: danger / error (unchanged) */
+  --card:   #ffffff;
+  --bg:     #F5F4F2;          /* warm light bg (was blue-tinted) */
+  --soft:   #EEEAE8;          /* warm soft surface (was blue-tinted) */
+  --shadow: 0 18px 50px rgba(28, 25, 23, 0.09);  /* warm shadow */
 }
 
 * {
@@ -60,9 +67,9 @@ textarea {
 
 .sidebar {
   background:
-    linear-gradient(180deg, rgba(0, 183, 255, 0.1), transparent 34%),
-    linear-gradient(180deg, var(--nav), #020a14);
-  color: #dcecff;
+    linear-gradient(180deg, rgba(200, 32, 46, 0.10), transparent 36%),
+    linear-gradient(180deg, var(--nav), #0A0706);
+  color: #EDE8E6;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -81,19 +88,21 @@ textarea {
 
 .brand-mark {
   color: #fff;
-  font-size: 29px;
+  font-size: 26px;
   line-height: 1;
   font-weight: 900;
-  letter-spacing: 0;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .brand-sub {
   margin-top: 5px;
-  color: var(--cyan);
-  font-size: 11px;
+  color: rgba(237, 232, 230, 0.70);
+  font-size: 10px;
   line-height: 1.35;
-  font-weight: 800;
+  font-weight: 600;
   text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .side-nav {
@@ -108,14 +117,14 @@ textarea {
   gap: 10px;
   min-height: 42px;
   padding: 10px 11px;
-  color: #eaf5ff;
+  color: #EDE8E6;
   border-radius: 8px;
   font-size: 14px;
 }
 
 .nav-item:hover,
 .nav-item.active {
-  background: linear-gradient(135deg, #0877fb, #0555b9);
+  background: linear-gradient(135deg, #C8202E, #9E1A24);
   color: #fff;
 }
 
@@ -139,7 +148,7 @@ textarea {
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  background: #0789ff;
+  background: #C8202E;
   color: #fff;
   font-size: 12px;
   font-weight: 800;
@@ -183,7 +192,7 @@ textarea {
 
 .topbar {
   height: 84px;
-  background: linear-gradient(180deg, #061324, #020b15);
+  background: linear-gradient(180deg, #1C1917, #100C0B);
   color: #fff;
   display: grid;
   grid-template-columns: minmax(220px, 1fr) minmax(280px, 520px) auto;
@@ -324,8 +333,8 @@ h3 {
 }
 
 .button.primary {
-  border-color: #0069ee;
-  background: linear-gradient(135deg, #087bff, #045ddd);
+  border-color: #A01824;
+  background: linear-gradient(135deg, #C8202E, #9E1A24);
   color: #fff;
 }
 
@@ -392,7 +401,7 @@ h3 {
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: #e8f2ff;
+  background: #FBE8E9;
   color: var(--blue);
 }
 
@@ -412,11 +421,11 @@ h3 {
   font-size: 30px;
   line-height: 1;
   font-weight: 900;
-  color: #142136;
+  color: #1C1614;
 }
 
 .metric-label {
-  color: #314158;
+  color: #3D3533;
   font-size: 12px;
   font-weight: 800;
 }
@@ -571,7 +580,7 @@ h3 {
 }
 
 .stack-b {
-  background: #0b7bff;
+  background: #C8202E;
 }
 
 .stack-c {
@@ -585,7 +594,7 @@ h3 {
   display: grid;
   place-items: center;
   margin: 12px auto;
-  background: conic-gradient(var(--green) 0 75%, #0b7bff 75% 88%, #f59e0b 88% 95%, #dfe6ef 95%);
+  background: conic-gradient(var(--green) 0 75%, #C8202E 75% 88%, #f59e0b 88% 95%, #dfe6ef 95%);
 }
 
 .donut-inner {
@@ -700,14 +709,14 @@ h3 {
   min-height: 100vh;
   display: grid;
   grid-template-columns: minmax(320px, 0.85fr) minmax(380px, 1.15fr);
-  background: #f4f7fb;
+  background: var(--bg);
 }
 
 .login-brand {
   padding: 42px;
   background:
-    linear-gradient(180deg, rgba(0, 183, 255, 0.14), transparent 45%),
-    linear-gradient(180deg, #061324, #020913);
+    linear-gradient(180deg, rgba(200, 32, 46, 0.14), transparent 48%),
+    linear-gradient(180deg, #1C1917, #0A0706);
   color: #fff;
   display: flex;
   flex-direction: column;
@@ -841,8 +850,8 @@ h3 {
 
 .tb-btn.active,
 .tb-btn[aria-pressed="true"] {
-  background: linear-gradient(135deg, #087bff, #045ddd);
-  border-color: #0069ee;
+  background: linear-gradient(135deg, #C8202E, #9E1A24);
+  border-color: #A01824;
   color: #fff;
 }
 
@@ -963,8 +972,8 @@ h3 {
 }
 
 .filter-chip.active {
-  background: linear-gradient(135deg, #087bff, #045ddd);
-  border-color: #0069ee;
+  background: linear-gradient(135deg, #C8202E, #9E1A24);
+  border-color: #A01824;
   color: #fff;
 }
 
@@ -1311,9 +1320,9 @@ a.card:hover,
   overflow: hidden;
   background: linear-gradient(
     90deg,
-    rgba(0, 110, 245, 0.08) 0%,
-    rgba(0, 183, 255, 0.18) 50%,
-    rgba(0, 110, 245, 0.08) 100%
+    rgba(200, 32, 46, 0.07) 0%,
+    rgba(214, 74, 84, 0.16) 50%,
+    rgba(200, 32, 46, 0.07) 100%
   );
   background-size: 200px 100%;
   background-repeat: no-repeat;
@@ -1358,7 +1367,7 @@ a.card:hover,
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  border: 2px solid rgba(0, 110, 245, 0.18);
+  border: 2px solid rgba(200, 32, 46, 0.18);
   border-top-color: var(--blue);
   animation: motion-spin 720ms linear infinite;
   vertical-align: -2px;
@@ -1375,7 +1384,7 @@ a.card:hover,
   position: relative;
   height: 8px;
   border-radius: 999px;
-  background: rgba(0, 110, 245, 0.12);
+  background: rgba(200, 32, 46, 0.12);
   overflow: hidden;
   margin: 12px 0 20px;
 }
@@ -1428,7 +1437,7 @@ a.card:hover,
   transform: translate3d(2px, 0, 0);
 }
 .quiz-option--selected {
-  background: rgba(0, 110, 245, 0.06);
+  background: rgba(200, 32, 46, 0.06);
   border-color: var(--blue);
 }
 

@@ -6,12 +6,12 @@ const config: Config = {
     extend: {
       colors: {
         cleanops: {
-          navy: "#031224",
-          blue: "#006ef5",
-          cyan: "#00b7ff",
-          green: "#15a85b",
-          amber: "#f59e0b",
-          red: "#ef2d2d"
+          navy:   "#1C1917",   /* Advanced Charcoal (was blue-navy) */
+          blue:   "#C8202E",   /* Advanced Red — primary action (was blue) */
+          cyan:   "#D64A54",   /* Lighter Advanced Red — secondary accent */
+          green:  "#15a85b",   /* status: healthy (unchanged) */
+          amber:  "#f59e0b",   /* status: warning (unchanged) */
+          red:    "#ef2d2d"    /* status: danger / error (unchanged) */
         }
       },
       borderRadius: {

@@ -49,8 +49,8 @@ export function AppShell({ user, children }: { user: AuthenticatedUser; children
     <div className="app-shell">
       <aside className="sidebar">
         <div className="brand">
-          <div className="brand-mark">CleanOps</div>
-          <div className="brand-sub">Command Center</div>
+          <div className="brand-mark">{process.env.COMPANY_NAME || "ADVANCED"}</div>
+          <div className="brand-sub">Shop Management</div>
         </div>
         <nav className="side-nav" aria-label="Main navigation">
           {visibleNavigation.map((slug, index) => {
@@ -97,8 +97,8 @@ export function AppShell({ user, children }: { user: AuthenticatedUser; children
           </Link>
         </nav>
         <div className="sidebar-card">
-          <strong>{process.env.COMPANY_NAME || "CleanOps"}</strong>
-          <span>Operations Command</span>
+          <strong>{process.env.COMPANY_NAME || "Advanced PMC"}</strong>
+          <span>Partners in Manufacturing</span>
           <p>{BRAND_FOOTER}</p>
         </div>
         <div className="version">v1.0.0</div>
