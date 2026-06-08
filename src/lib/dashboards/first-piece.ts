@@ -130,6 +130,45 @@ export async function loadFirstPiece(ctx: DashboardContext): Promise<DashboardDa
     { label: `Pending (${pending})`, value: pending, tone: "amber" as Tone }
   ].filter((s) => s.value > 0);
 
+  // Live first-piece run-tracker board (FirstPieceRun) — when runs have been
+  // logged, fold a real FPY (run #1 pass rate) and a defect-code Pareto in.
+  const runs = await prisma.firstPieceRun.findMany({
+    where,
+    select: { result: true, runNumber: true, defectCode: true },
+    take: 5000
+  });
+  let runFirstPass = 0;
+  let runFirstDecided = 0;
+  const defectCounts = new Map<string, number>();
+  for (const r of runs) {
+    const b = resultBucket(r.result);
+    if ((r.runNumber ?? 1) === 1 && b !== "PENDING") {
+      runFirstDecided += 1;
+      if (b === "PASS") runFirstPass += 1;
+    }
+    if (b === "FAIL" && r.defectCode) {
+      defectCounts.set(r.defectCode, (defectCounts.get(r.defectCode) ?? 0) + 1);
+    }
+  }
+  const runFpy = runFirstDecided > 0 ? Math.round((runFirstPass / runFirstDecided) * 100) : null;
+  const runKpis = runs.length
+    ? [
+        {
+          label: "FPY (run tracker)",
+          value: runFpy === null ? "—" : `${runFpy}%`,
+          note: `${runFirstPass}/${runFirstDecided} run #1 · ${runs.length} runs logged`,
+          tone: (runFpy !== null && runFpy >= 95 ? "green" : runFpy !== null && runFpy >= 85 ? "amber" : "red") as Tone
+        }
+      ]
+    : [];
+  const defectItems = [...defectCounts.entries()]
+    .map(([label, value]) => ({ label, value, tone: "red" as Tone }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 12);
+  const runWidgets = defectItems.length
+    ? [{ kind: "bar" as const, id: "defect-pareto", title: "Top fail defect codes (run tracker)", items: defectItems }]
+    : [];
+
   return {
     note: `${scopedToFirstArticle ? "Scoped to first-article / FAI inspections (AS9102 first-piece context). " : "No first-article inspection types found — showing all quality inspections. "}First Pass Yield uses the earliest inspection per work order as the first-run proxy (QualityInspection has no per-run number).`,
     kpis: [
@@ -141,7 +180,8 @@ export async function loadFirstPiece(ctx: DashboardContext): Promise<DashboardDa
       },
       { label: "Pass rate (all runs)", value: passRate === null ? "—" : `${passRate}%`, note: `${pass} pass · ${fail} fail`, tone: passRate !== null && passRate >= 90 ? "green" : "amber" },
       { label: "Overdue inspections", value: overdue, note: "Past due, not done", tone: overdue > 0 ? "red" : "green" },
-      { label: "Open NCRs", value: openNcrs, note: "Nonconformances", tone: openNcrs > 0 ? "red" : "green" }
+      { label: "Open NCRs", value: openNcrs, note: "Nonconformances", tone: openNcrs > 0 ? "red" : "green" },
+      ...runKpis
     ],
     widgets: [
       {
@@ -189,7 +229,8 @@ export async function loadFirstPiece(ctx: DashboardContext): Promise<DashboardDa
         items: ncrGroups
           .map((g) => ({ label: g.severity, value: g._count._all, tone: severityTone(g.severity) }))
           .sort((a, b) => b.value - a.value)
-      }
+      },
+      ...runWidgets
     ]
   };
 }

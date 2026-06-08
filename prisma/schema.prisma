@@ -3436,3 +3436,43 @@ model MaintenanceDowntimeEvent {
   @@index([organizationId, machineId, startAt])
   @@map("maintenance_downtime_events")
 }
+
+// ---------------------------------------------------------------------------
+// First-Piece / NPI live run tracker (reimagines the "NPI LIVE" + "First Pass
+// Yield Tracker" apps). A shop-floor log of first-article / prove-out runs:
+// which part, machine, run #, op #, setup tech, inspection method, outcome
+// (Pass/Fail/Pending), defect code, and status. Operational metadata only —
+// the part number is an operational identifier, not the controlled drawing.
+// See docs/first-piece-module.md.
+// ---------------------------------------------------------------------------
+model FirstPieceRun {
+  id               String    @id @default(cuid())
+  organizationId   String
+  wo               String
+  partNumber       String?
+  customer         String?
+  workCenter       String?
+  runNumber        Int?
+  opNumber         String?
+  inspectionMethod String?
+  setupTech        String?
+  status           String    @default("On Cycle") // On Cycle | Inspection | In Queue | Completed
+  result           String?   // Pass | Fail | Pending
+  defectCode       String?
+  dmaxLab          String?
+  opStartDate      DateTime?
+  detail           String?
+  notes            String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  createdById      String?
+  updatedById      String?
+  departmentId     String?
+  ownerId          String?
+  archivedAt       DateTime?
+
+  @@index([organizationId, result])
+  @@index([organizationId, opStartDate])
+  @@index([organizationId, workCenter])
+  @@map("first_piece_runs")
+}

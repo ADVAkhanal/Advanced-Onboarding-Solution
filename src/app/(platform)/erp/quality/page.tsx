@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { departmentScopeForUser, requirePermission } from "@/lib/auth";
 import { formatShortDate, getErpReferenceData } from "@/lib/erp-data";
@@ -21,7 +22,7 @@ export default async function QualityPage() {
 
   return (
     <>
-      <div className="page-head"><div><p className="eyebrow">Quality Coordination</p><h1>Quality & NCRs</h1><p className="subhead">Inspection queues and nonconformance coordination for internal production control. This is not a formal compliance evidence system.</p></div></div>
+      <div className="page-head"><div><p className="eyebrow">Quality Coordination</p><h1>Quality & NCRs</h1><p className="subhead">Inspection queues and nonconformance coordination for internal production control. This is not a formal compliance evidence system.</p></div><div className="actions"><Link className="button" href="/erp/first-piece">First-Piece Tracker</Link></div></div>
       <div className="grid two-col">
         <ErpCreateForm title="Create Inspection" endpoint="/api/erp/quality" fields={[
           { name: "workOrderId", label: "Work Order", type: "select", options: jobOptions },
