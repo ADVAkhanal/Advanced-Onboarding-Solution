@@ -3271,3 +3271,168 @@ model ProShopSyncRun {
   @@index([organizationId, module, startedAt])
   @@map("proshop_sync_runs")
 }
+
+// ---------------------------------------------------------------------------
+// Maintenance / CMMS  (reimagines the standalone "Maintenance Command" app)
+// Equipment asset register, preventive-maintenance schedule, maintenance work
+// orders, MRO parts/supplies, and downtime log. Operational metadata only —
+// machine specs, MRO supplies, and PM cadence are not CUI/ITAR or proprietary
+// process parameters. See docs/maintenance-module.md.
+// ---------------------------------------------------------------------------
+
+// A physical shop asset (CNC machine, support equipment, inspection device).
+// Loosely linked to WorkCenter by `code` for capacity context, but kept
+// separate: WorkCenter is a lean capacity row, Machine is the maintenance
+// asset with status, PM, and downtime history.
+model Machine {
+  id             String    @id @default(cuid())
+  organizationId String
+  code           String
+  name           String
+  category       String    @default("Support")
+  building       Int?
+  status         String    @default("running") // running | down | pm | idle | moving
+  manufacturer   String?
+  serial         String?
+  envelope       String?
+  footprint      String?
+  installDate    DateTime?
+  serviceHours   Int       @default(0)
+  location       String?
+  notes          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  createdById    String?
+  updatedById    String?
+  departmentId   String?
+  ownerId        String?
+  archivedAt     DateTime?
+
+  @@unique([organizationId, code])
+  @@index([organizationId, status])
+  @@index([organizationId, category])
+  @@map("machines")
+}
+
+model MaintenanceWorkOrder {
+  id              String          @id @default(cuid())
+  organizationId  String
+  woNumber        String
+  machineId       String?
+  title           String
+  description     String?
+  priority        RequestPriority @default(NORMAL)
+  status          String          @default("REQUESTED") // REQUESTED | ASSIGNED | IN_PROGRESS | DONE
+  requestedByName String?
+  requestedByDept String?
+  assignee        String?
+  dueDate         DateTime?
+  source          String          @default("internal") // internal | public
+  closedAt        DateTime?
+  notes           String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  createdById     String?
+  updatedById     String?
+  departmentId    String?
+  ownerId         String?
+  archivedAt      DateTime?
+
+  @@unique([organizationId, woNumber])
+  @@index([organizationId, status])
+  @@index([organizationId, machineId])
+  @@map("maintenance_work_orders")
+}
+
+// A recurring preventive-maintenance task for a machine. Completing it logs a
+// PmCompletion and rolls nextDueAt forward by the frequency.
+model PmTask {
+  id             String    @id @default(cuid())
+  organizationId String
+  machineId      String
+  title          String
+  frequency      String    @default("monthly") // daily | weekly | monthly | quarterly | annual
+  estMinutes     Int       @default(30)
+  nextDueAt      DateTime?
+  lastDoneAt     DateTime?
+  status         String    @default("ACTIVE")
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  createdById    String?
+  updatedById    String?
+  departmentId   String?
+  ownerId        String?
+  archivedAt     DateTime?
+
+  @@index([organizationId, machineId])
+  @@index([organizationId, nextDueAt])
+  @@map("pm_tasks")
+}
+
+// Append-only record of a completed PM (AS9100D records-retention posture).
+model PmCompletion {
+  id             String    @id @default(cuid())
+  organizationId String
+  pmTaskId       String
+  machineId      String
+  title          String
+  completedAt    DateTime  @default(now())
+  completedById  String?
+  notes          String?
+  createdAt      DateTime  @default(now())
+  departmentId   String?
+  ownerId        String?
+  archivedAt     DateTime?
+
+  @@index([organizationId, machineId, completedAt])
+  @@index([organizationId, pmTaskId])
+  @@map("pm_completions")
+}
+
+// MRO consumables / supplies (NOT production inventory — that is InventoryItem).
+model MaintenancePart {
+  id             String    @id @default(cuid())
+  organizationId String
+  name           String
+  category       String?
+  subCategory    String?
+  unit           String    @default("each")
+  quantityOnHand Int       @default(0)
+  reorderPoint   Int       @default(0)
+  critical       Boolean   @default(false)
+  location       String?
+  vendor         String?
+  notes          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  createdById    String?
+  updatedById    String?
+  departmentId   String?
+  ownerId        String?
+  archivedAt     DateTime?
+
+  @@index([organizationId, category])
+  @@index([organizationId, critical])
+  @@map("maintenance_parts")
+}
+
+model MaintenanceDowntimeEvent {
+  id             String    @id @default(cuid())
+  organizationId String
+  machineId      String
+  startAt        DateTime
+  hours          Decimal?  @db.Decimal(8, 2)
+  reason         String?
+  rootCause      String?
+  resolution     String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  createdById    String?
+  updatedById    String?
+  departmentId   String?
+  ownerId        String?
+  archivedAt     DateTime?
+
+  @@index([organizationId, machineId, startAt])
+  @@map("maintenance_downtime_events")
+}

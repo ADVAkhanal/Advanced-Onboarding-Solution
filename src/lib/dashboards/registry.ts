@@ -2,6 +2,7 @@ import type { DashboardDef } from "./types";
 import { loadAdvancedCapacity } from "./advanced-capacity";
 import { loadCapacityHeatmap } from "./capacity-heatmap";
 import { loadFirstPiece } from "./first-piece";
+import { loadMaintenanceHealth } from "./maintenance-health";
 import { loadNpi } from "./npi";
 import { loadPkGant } from "./pk-gant";
 import { loadProShopBacklog } from "./proshop-backlog";
@@ -101,6 +102,16 @@ export const DASHBOARDS: DashboardDef[] = [
     description: "Operational vitals: utilization, remaining time, late risk, bottlenecks, reject/rework rate, inspection queue aging, and schedule adherence.",
     permission: "report:view",
     load: loadShopHealth
+  },
+  {
+    key: "maintenance-health",
+    title: "Maintenance Health",
+    eyebrow: "Analytics · Maintenance",
+    description:
+      "CMMS vitals: uptime, machines down, open + overdue work orders, PM overdue, downtime hours, MRO low stock, and top problem machines.",
+    inspiredBy: "Maintenance Command (standalone app)",
+    permission: "maintenance:view",
+    load: loadMaintenanceHealth
   }
 ];
 

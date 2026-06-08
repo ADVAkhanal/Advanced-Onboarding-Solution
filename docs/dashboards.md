@@ -65,6 +65,7 @@ surfaced in-UI. Correct any that differ from the originals.)
 | `npi` | NPI Dashboard | Part, QuoteLine, WorkOrder | New parts (90d) funnel New → Quoted → In production |
 | `proshop-backlog` | ProShop Backlog | ProShop GraphQL (live) | Active work orders, backlog value, overdue, due-soon, by customer. See `docs/proshop-integration.md`. |
 | `shop-health` | Shop Floor Health | WorkOrder, WorkOrderOperation, QualityInspection | Operational vitals: utilization, remaining time, late risk, bottlenecks, reject/rework rate, inspection queue aging, schedule adherence |
+| `maintenance-health` | Maintenance Health | Machine, MaintenanceWorkOrder, PmTask, PmCompletion, MaintenanceDowntimeEvent, MaintenancePart | CMMS vitals: uptime, machines down, open/overdue WOs, PM overdue, downtime hours, MRO low stock, top problem machines. See `docs/maintenance-module.md`. |
 
 The source repos were read this round (public). They are upload-driven
 Express/Postgres trackers, so these live-ERP versions are modernizations

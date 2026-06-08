@@ -449,6 +449,21 @@ export const WORKFLOW_MODULES: WorkflowModule[] = [
     reports: ["Shop Floor Time Report", "Job Time Summary"]
   },
   {
+    slug: "maintenance-command",
+    title: "Maintenance Command",
+    navLabel: "Maintenance",
+    icon: Wrench,
+    summary: "Equipment asset register, preventive-maintenance schedule, maintenance work orders, MRO parts/supplies, and downtime log. Operational metadata only — no CUI, ITAR, or proprietary process parameters.",
+    owner: "Maintenance, Facilities, Operations",
+    primaryAction: "New Maintenance Work Order",
+    secondaryAction: "Open PM Schedule",
+    metricLabels: ["Machines", "Machines down", "PM due (7d)", "Open work orders"],
+    workflows: ["Report a machine issue", "Triage and assign work orders", "Complete scheduled PM", "Track downtime and MRO stock"],
+    fields: ["machine", "category", "status", "priority", "assignee", "due date", "frequency", "reorder point"],
+    statuses: ["REQUESTED", "ASSIGNED", "IN_PROGRESS", "DONE"],
+    reports: ["Machine Roster", "PM Compliance Report", "Downtime Report", "Low MRO Stock Report"]
+  },
+  {
     slug: "erp-documents",
     title: "ERP Document Records",
     navLabel: "ERP Documents",
@@ -1062,6 +1077,7 @@ export const NAVIGATION = [
   "shipping",
   "quality-ncrs",
   "shop-floor-control",
+  "maintenance-command",
   "department-ticket-centers",
   "onboarding-case-management",
   "payroll-coordination-center",
