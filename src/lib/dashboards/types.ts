@@ -69,7 +69,39 @@ export type GanttWidget = {
   ticks: string[];
 };
 
-export type Widget = TableWidget | BarWidget | DonutWidget | GanttWidget;
+/** A single cell in a heatmap. value is the numeric measure (e.g. a
+ *  utilization %); null renders as an empty / no-data cell. tone drives the
+ *  color band, display overrides the rendered text. */
+export type HeatmapCell = {
+  value: number | null;
+  display?: string;
+  tone?: Tone;
+  title?: string;
+};
+
+export type HeatmapRow = {
+  label: string;
+  sublabel?: string;
+  cells: HeatmapCell[];
+};
+
+/** A row-label × column matrix (e.g. work-center × month utilization). Each
+ *  row's cells line up positionally with `columns`. */
+export type HeatmapWidget = {
+  kind: "heatmap";
+  id: string;
+  title: string;
+  /** Column headers; one entry per cell index. */
+  columns: string[];
+  /** Header for the row-label column (top-left corner). */
+  rowHeader?: string;
+  rows: HeatmapRow[];
+  /** Legend chips rendered under the matrix. */
+  legend?: Array<{ label: string; tone: Tone }>;
+  emptyLabel?: string;
+};
+
+export type Widget = TableWidget | BarWidget | DonutWidget | GanttWidget | HeatmapWidget;
 
 export type DashboardData = {
   kpis: Kpi[];

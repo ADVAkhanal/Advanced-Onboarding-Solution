@@ -1,5 +1,6 @@
 import type { DashboardDef } from "./types";
 import { loadAdvancedCapacity } from "./advanced-capacity";
+import { loadCapacityHeatmap } from "./capacity-heatmap";
 import { loadFirstPiece } from "./first-piece";
 import { loadNpi } from "./npi";
 import { loadPkGant } from "./pk-gant";
@@ -37,6 +38,16 @@ export const DASHBOARDS: DashboardDef[] = [
     inspiredBy: "ADVAkhanal/AdvancedCapacity",
     permission: "report:view",
     load: loadAdvancedCapacity
+  },
+  {
+    key: "capacity-heatmap",
+    title: "Capacity Heatmap",
+    eyebrow: "Analytics · Capacity",
+    description:
+      "Work-center × month utilization matrix with over-capacity alerts — open load (setup + run hours) bucketed by month vs configured capacity.",
+    inspiredBy: "ADVAkhanal/AdvancedCapacity · Scheduling · PK-GANT (loaded-hours panel)",
+    permission: "report:view",
+    load: loadCapacityHeatmap
   },
   {
     key: "scheduling",

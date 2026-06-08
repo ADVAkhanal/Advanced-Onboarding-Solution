@@ -4,6 +4,7 @@ import type {
   DashboardData,
   DonutWidget,
   GanttWidget,
+  HeatmapWidget,
   Kpi,
   TableWidget,
   Tone,
@@ -17,6 +18,16 @@ const TONE_COLOR: Record<Tone, string> = {
   red: "#ef2d2d",
   cyan: "#00b7ff"
 };
+
+/** Tint a tone color for heatmap cell backgrounds (kept subtle; the cell's
+ *  number is always the primary signal, so contrast never relies on color). */
+function hexToRgba(hex: string, alpha: number): string {
+  const h = hex.replace("#", "");
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
 
 function toneValueClass(tone?: Tone): string {
   if (tone === "green") return "tone-green";
@@ -209,6 +220,84 @@ function GanttBlock({ widget }: { widget: GanttWidget }) {
   );
 }
 
+function HeatmapBlock({ widget }: { widget: HeatmapWidget }) {
+  return (
+    <section className="card">
+      <div className="section-title">
+        <h2>{widget.title}</h2>
+        <span className="pill">{widget.rows.length}</span>
+      </div>
+      <div className="card-pad">
+        {widget.rows.length === 0 ? (
+          <div className="empty">{widget.emptyLabel ?? "No data."}</div>
+        ) : (
+          <>
+            <div className="heatmap-scroll">
+              <table className="heatmap">
+                <thead>
+                  <tr>
+                    <th scope="col" className="heatmap-rowhead">
+                      {widget.rowHeader ?? ""}
+                    </th>
+                    {widget.columns.map((c, i) => (
+                      <th scope="col" key={`${c}-${i}`}>
+                        {c}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {widget.rows.map((row, ri) => (
+                    <tr key={`${row.label}-${ri}`}>
+                      <th scope="row" className="heatmap-rowhead" title={row.sublabel}>
+                        {row.label}
+                      </th>
+                      {row.cells.map((cell, ci) => {
+                        if (cell.value === null) {
+                          return (
+                            <td className="heatmap-cell heatmap-empty" key={ci} title={cell.title}>
+                              —
+                            </td>
+                          );
+                        }
+                        const color = TONE_COLOR[cell.tone ?? "blue"];
+                        return (
+                          <td
+                            className="heatmap-cell"
+                            key={ci}
+                            title={cell.title}
+                            style={{ background: hexToRgba(color, 0.16), boxShadow: `inset 0 -2px 0 ${color}` }}
+                          >
+                            {cell.display ?? cell.value}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {widget.legend && widget.legend.length > 0 ? (
+              <div className="heatmap-legend">
+                {widget.legend.map((l, i) => (
+                  <span className="heatmap-legend-item" key={`${l.label}-${i}`}>
+                    <span
+                      aria-hidden="true"
+                      className="heatmap-legend-swatch"
+                      style={{ background: TONE_COLOR[l.tone] }}
+                    />
+                    {l.label}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+          </>
+        )}
+      </div>
+    </section>
+  );
+}
+
 function WidgetBlock({ widget }: { widget: Widget }) {
   switch (widget.kind) {
     case "bar":
@@ -219,6 +308,8 @@ function WidgetBlock({ widget }: { widget: Widget }) {
       return <TableBlock widget={widget} />;
     case "gantt":
       return <GanttBlock widget={widget} />;
+    case "heatmap":
+      return <HeatmapBlock widget={widget} />;
     default:
       return null;
   }

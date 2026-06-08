@@ -23,7 +23,7 @@ serves all of them. Every dashboard exports to CSV and prints to PDF.
 | CSV export API | `GET /api/erp/dashboards/[key]/export.csv` |
 
 A dashboard definition returns `DashboardData`: a list of KPIs plus
-declarative **widgets** — `table`, `bar`, `donut`, or `gantt`. The
+declarative **widgets** — `table`, `bar`, `donut`, `gantt`, or `heatmap`. The
 renderer turns those into existing `globals.css` primitives (`.kpi`,
 `.bar-list`, `.donut` conic-gradient, `DataTable`, and a dependency-free
 CSS `.gantt`). **No charting library.**
@@ -47,7 +47,7 @@ That's it — index, renderer, print, and CSV export all pick it up. No new rout
 
 ---
 
-## The six dashboards
+## The dashboards
 
 Each reimagines an `ADVAkhanal/*` repo over existing ERP data. (Those
 repos could not be read from this environment, so each is built from its
@@ -58,11 +58,13 @@ surfaced in-UI. Correct any that differ from the originals.)
 |---|---|---|---|
 | `sales-advanced` | Sales Advanced | Quote, SalesOrder, CustomerAccount | Open value, win rate, value-by-status, top customers |
 | `advanced-capacity` | Advanced Capacity | WorkOrderOperation, WorkOrder | Remaining hours + utilization by work center, overdue WOs |
+| `capacity-heatmap` | Capacity Heatmap | WorkOrderOperation, WorkOrder, WorkCenter | WC × month utilization matrix, over-capacity alerts, loaded-hours panel (integrates AdvancedCapacity heatmap + Scheduling + PK-GANT hours panel) |
 | `scheduling` | Scheduling | ShopScheduleItem, WorkOrder | Next 7 days, late items, status mix, load by center |
 | `pk-gant` | PK Gantt | WorkOrderOperation | CSS Gantt timeline, overdue bars |
 | `first-piece` | First-Piece Run Tracker | QualityInspection, NonconformanceRecord | FAI pass rate, overdue inspections, NCRs by severity |
 | `npi` | NPI Dashboard | Part, QuoteLine, WorkOrder | New parts (90d) funnel New → Quoted → In production |
 | `proshop-backlog` | ProShop Backlog | ProShop GraphQL (live) | Active work orders, backlog value, overdue, due-soon, by customer. See `docs/proshop-integration.md`. |
+| `shop-health` | Shop Floor Health | WorkOrder, WorkOrderOperation, QualityInspection | Operational vitals: utilization, remaining time, late risk, bottlenecks, reject/rework rate, inspection queue aging, schedule adherence |
 
 The source repos were read this round (public). They are upload-driven
 Express/Postgres trackers, so these live-ERP versions are modernizations

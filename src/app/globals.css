@@ -1755,6 +1755,88 @@ button.pill:focus-visible {
   }
 }
 
+/* Heatmap widget — row-label × column matrix (e.g. work-center × month        */
+/* utilization). The cell number is the primary signal; the tone tint is a     */
+/* secondary cue, so contrast never depends on color (WCAG AA).                */
+.heatmap-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.heatmap {
+  border-collapse: separate;
+  border-spacing: 3px;
+  width: 100%;
+  min-width: 520px;
+}
+
+.heatmap th,
+.heatmap td {
+  font-size: 12px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.heatmap thead th {
+  color: var(--muted);
+  font-weight: 700;
+  padding: 4px 6px;
+  position: sticky;
+  top: 0;
+  background: var(--card);
+}
+
+.heatmap-rowhead {
+  text-align: left;
+  font-weight: 600;
+  color: var(--text);
+  padding: 4px 10px 4px 4px;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  position: sticky;
+  left: 0;
+  background: var(--card);
+  z-index: 1;
+}
+
+.heatmap-cell {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--text);
+  border-radius: 4px;
+  padding: 6px 8px;
+  min-width: 46px;
+}
+
+.heatmap-empty {
+  color: var(--muted);
+  background: var(--soft);
+  font-weight: 400;
+}
+
+.heatmap-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 12px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.heatmap-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.heatmap-legend-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
 @media print {
   /* Strip the app shell so the printed page is just the document. */
   .sidebar,
