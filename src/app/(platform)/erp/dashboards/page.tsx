@@ -19,6 +19,9 @@ export default async function DashboardsIndexPage() {
             exports to CSV and prints to PDF.
           </p>
         </div>
+        <div className="actions">
+          <Link className="button" href="/blueprint">Platform Blueprint</Link>
+        </div>
       </div>
 
       {visible.length === 0 ? (
