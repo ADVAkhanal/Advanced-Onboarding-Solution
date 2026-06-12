@@ -464,6 +464,21 @@ export const WORKFLOW_MODULES: WorkflowModule[] = [
     reports: ["Machine Roster", "PM Compliance Report", "Downtime Report", "Low MRO Stock Report"]
   },
   {
+    slug: "shift-handoff",
+    title: "Shift Handoff",
+    navLabel: "Shift Handoff",
+    icon: ClipboardCheck,
+    summary: "End-of-shift handoff log: per-machine status, work order, parts made vs target, and notes for the next shift. DOWN reports flow into the maintenance board.",
+    owner: "Operators, Shift Leads, Operations",
+    primaryAction: "Submit Handoff",
+    secondaryAction: "Review Last Shift",
+    metricLabels: ["Handoffs (7d)", "DOWN reports", "Parts made", "Attainment"],
+    workflows: ["Submit end-of-shift handoff", "Review previous shift", "Machine DOWN escalation", "Supervisor notification"],
+    fields: ["shift", "date", "operators", "machine", "work order", "status", "parts made", "parts target", "notes"],
+    statuses: ["RUNNING", "DOWN", "SETUP", "IDLE", "COMPLETE"],
+    reports: ["Shift Handoff Log", "Shift Attainment Report"]
+  },
+  {
     slug: "erp-documents",
     title: "ERP Document Records",
     navLabel: "ERP Documents",
@@ -1078,6 +1093,7 @@ export const NAVIGATION = [
   "quality-ncrs",
   "shop-floor-control",
   "maintenance-command",
+  "shift-handoff",
   "department-ticket-centers",
   "onboarding-case-management",
   "payroll-coordination-center",

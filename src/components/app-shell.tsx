@@ -18,6 +18,7 @@ export function AppShell({ user, children }: { user: AuthenticatedUser; children
     "quality-ncrs": "/erp/quality",
     "shop-floor-control": "/erp/shop-floor",
     "maintenance-command": "/maintenance",
+    "shift-handoff": "/shift-handoff",
     "erp-documents": "/erp/documents",
     "department-ticket-centers": "/tickets",
     "onboarding-case-management": "/onboarding",

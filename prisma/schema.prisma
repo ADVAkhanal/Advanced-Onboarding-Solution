@@ -3476,3 +3476,51 @@ model FirstPieceRun {
   @@index([organizationId, workCenter])
   @@map("first_piece_runs")
 }
+
+// ---------------------------------------------------------------------------
+// Shift Handoff (reimagines the standalone "Production Shift Handoff" app —
+// ADVAkhanal/Shift-Handoff). Operators record an end-of-shift handoff: shift,
+// date, who was on, general notes, and one entry per machine (status, work
+// order, parts made vs target, notes). Supervisors get a Pushover alert when
+// configured. Operational metadata only. See docs/shift-handoff-module.md.
+// ---------------------------------------------------------------------------
+model ShiftHandoff {
+  id              String    @id @default(cuid())
+  organizationId  String
+  shift           String    // DAY | EVENING | NIGHT
+  shiftDate       DateTime
+  operators       String?   // names on shift, free text
+  notes           String?
+  submittedByName String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  createdById     String?
+  updatedById     String?
+  departmentId    String?
+  ownerId         String?
+  archivedAt      DateTime?
+
+  @@index([organizationId, shiftDate])
+  @@index([organizationId, shift, shiftDate])
+  @@map("shift_handoffs")
+}
+
+model ShiftHandoffEntry {
+  id             String    @id @default(cuid())
+  organizationId String
+  handoffId      String
+  machineCode    String    // loose link to Machine.code / work center
+  woNumber       String?
+  status         String    @default("RUNNING") // RUNNING | DOWN | SETUP | IDLE | COMPLETE
+  partsMade      Int?
+  partsTarget    Int?
+  notes          String?
+  createdAt      DateTime  @default(now())
+  departmentId   String?
+  ownerId        String?
+  archivedAt     DateTime?
+
+  @@index([organizationId, handoffId])
+  @@index([organizationId, machineCode])
+  @@map("shift_handoff_entries")
+}
