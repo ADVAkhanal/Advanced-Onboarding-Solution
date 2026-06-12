@@ -10,6 +10,7 @@ import { deriveOperationActual } from "../src/lib/job-actuals";
 import { csvCell, toCsv } from "../src/lib/export/csv";
 import { parseProShopDate } from "../src/lib/proshop/work-orders";
 import { averageAgeDays, maxAgeDays, onTimeRate, reworkRate, utilizationPct } from "../src/lib/metrics";
+import { slaAssess, slaLabel, slaPill, slaWindowHours } from "../src/lib/sla";
 
 const mode = process.argv[2] ?? "all";
 
@@ -276,6 +277,43 @@ async function runUnit() {
     noisy!.confidenceScore < consistent!.confidenceScore,
     "high-variance samples should score lower confidence than consistent ones"
   );
+
+  // Ticket SLA helpers (helpdesk integration).
+  const HOUR = 3_600_000;
+  assert.equal(slaWindowHours("WORK_STOPPAGE"), 1);
+  assert.equal(slaWindowHours("NORMAL"), 24);
+  assert.equal(slaWindowHours("UNKNOWN_PRIORITY"), 24); // safe default
+  // Fresh NORMAL ticket at 6h of a 24h window → 25%, ok.
+  const slaOk = slaAssess({ createdAtMs: 0, priority: "NORMAL", nowMs: 6 * HOUR });
+  assert.equal(slaOk.state, "ok");
+  assert.equal(slaOk.pct, 25);
+  assert.equal(slaOk.hoursOver, null);
+  assert.equal(slaLabel(slaOk), "25% SLA");
+  assert.equal(slaPill(slaOk.state), "green");
+  // 75% of window is the risk threshold (18h of 24h).
+  const slaRisk = slaAssess({ createdAtMs: 0, priority: "NORMAL", nowMs: 18 * HOUR });
+  assert.equal(slaRisk.state, "risk");
+  assert.equal(slaPill(slaRisk.state), "amber");
+  // Past the window → breach with whole hours over (27h of 24h → +3h).
+  const slaBreach = slaAssess({ createdAtMs: 0, priority: "NORMAL", nowMs: 27 * HOUR });
+  assert.equal(slaBreach.state, "breach");
+  assert.equal(slaBreach.hoursOver, 3);
+  assert.equal(slaLabel(slaBreach), "+3h over");
+  assert.equal(slaPill(slaBreach.state), "red");
+  // Satisfied tickets stop the clock: closed at 2h stays "ok"/met even later.
+  const slaMet = slaAssess({ createdAtMs: 0, satisfiedAtMs: 2 * HOUR, priority: "NORMAL", nowMs: 100 * HOUR });
+  assert.equal(slaMet.state, "ok");
+  assert.equal(slaMet.satisfied, true);
+  assert.equal(slaLabel(slaMet), "met");
+  // Closed late stays breached (closed at 30h of a 24h window).
+  const slaLate = slaAssess({ createdAtMs: 0, satisfiedAtMs: 30 * HOUR, priority: "NORMAL", nowMs: 100 * HOUR });
+  assert.equal(slaLate.state, "breach");
+  assert.equal(slaLate.hoursOver, 6);
+  // WORK_STOPPAGE has a 1-hour window: 45 minutes in is already risk.
+  const slaWs = slaAssess({ createdAtMs: 0, priority: "WORK_STOPPAGE", nowMs: 0.75 * HOUR });
+  assert.equal(slaWs.state, "risk");
+  // Clock never goes negative (createdAt in the future → 0%).
+  assert.equal(slaAssess({ createdAtMs: 10 * HOUR, priority: "LOW", nowMs: 0 }).pct, 0);
 }
 
 async function runIntegration() {

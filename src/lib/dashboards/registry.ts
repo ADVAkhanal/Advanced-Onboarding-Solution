@@ -9,6 +9,7 @@ import { loadProShopBacklog } from "./proshop-backlog";
 import { loadSalesAdvanced } from "./sales-advanced";
 import { loadScheduling } from "./scheduling";
 import { loadShopHealth } from "./shop-health";
+import { loadSupportDesk } from "./support-desk";
 
 /**
  * Dashboard registry. Each entry is a self-contained, data-driven
@@ -112,6 +113,16 @@ export const DASHBOARDS: DashboardDef[] = [
     inspiredBy: "Maintenance Command (standalone app)",
     permission: "maintenance:view",
     load: loadMaintenanceHealth
+  },
+  {
+    key: "support-desk",
+    title: "Support Desk",
+    eyebrow: "Analytics · Tickets",
+    description:
+      "Helpdesk vitals with SLA lens: breached/at-risk queues, SLA-met rate, resolution time, queue aging, and load by priority/center.",
+    inspiredBy: "ADVANCED Helpdesk (standalone app)",
+    permission: "report:view",
+    load: loadSupportDesk
   }
 ];
 

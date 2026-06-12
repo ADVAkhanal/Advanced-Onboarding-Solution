@@ -47,7 +47,10 @@ export default async function TicketCentersPage() {
           <h1>Ticket Centers</h1>
           <p className="subhead">Every department queue has ownership, status, due dates, categories, internal notes, escalation rules, and aging visibility.</p>
         </div>
-        <Link className="button primary" href="/workflows/department-ticket-centers">Create Ticket</Link>
+        <div className="actions">
+          <Link className="button" href="/tickets/board">Triage Board</Link>
+          <Link className="button primary" href="/workflows/department-ticket-centers">Create Ticket</Link>
+        </div>
       </div>
       {user.userLevel !== "USER" ? (
         <div className="grid three-col">
