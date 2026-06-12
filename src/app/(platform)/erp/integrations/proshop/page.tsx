@@ -87,6 +87,7 @@ export default async function ProShopIntegrationPage() {
         </div>
         <div className="actions">
           <Link className="button" href="/erp/dashboards/proshop-backlog">Backlog dashboard</Link>
+          <Link className="button" href="/erp/integrations/erpnext">ERPNext bridge</Link>
         </div>
       </div>
 

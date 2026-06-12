@@ -35,6 +35,12 @@ export function checkEnv(): EnvReport {
   if (process.env.DATABASE_URL && process.env.DATABASE_URL.startsWith("file:")) {
     warnings.push("DATABASE_URL points at a file: use managed Postgres in production, not a volume-backed file DB.");
   }
+  // ERPNext bridge is optional, but a partial config is a silent footgun.
+  const erpVars = ["ERPNEXT_BASE_URL", "ERPNEXT_API_KEY", "ERPNEXT_API_SECRET"];
+  const erpSet = erpVars.filter((k) => process.env[k]?.trim());
+  if (erpSet.length > 0 && erpSet.length < erpVars.length) {
+    warnings.push(`ERPNext bridge is partially configured (set: ${erpSet.join(", ")}). Set all of ${erpVars.join(", ")} or none.`);
+  }
 
   return { ok: missing.length === 0, missing, warnings };
 }
