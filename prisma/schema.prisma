@@ -2543,6 +2543,13 @@ model Shipment {
   status         String    @default("PLANNED")
   priority       RequestPriority @default(NORMAL)
   notes          String?
+  // ShipNotify — recipient confirmation loop (QR on the packing slip).
+  recipientName  String?
+  recipientEmail String?
+  confirmToken   String?   @unique
+  notifiedAt     DateTime?
+  confirmedAt    DateTime?
+  confirmedByName String?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
   createdById    String?
