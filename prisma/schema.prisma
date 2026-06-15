@@ -3524,3 +3524,46 @@ model ShiftHandoffEntry {
   @@index([organizationId, machineCode])
   @@map("shift_handoff_entries")
 }
+
+// ---------------------------------------------------------------------------
+// CRM bridge — local mirror of customer/proposal requests captured on the
+// platform and pushed to Twenty CRM, with Papermark proposal-share analytics
+// fed back. Operational metadata only (names, company, summary, counts) — a
+// business contact email/phone is the most sensitive field; no banking/PII.
+// The local record is authoritative for the portal so a CRM outage never
+// loses a capture. See ADR 0001 and docs/crm-integration.md.
+// ---------------------------------------------------------------------------
+model CrmRequest {
+  id                  String    @id @default(cuid())
+  organizationId      String
+  requestType         String    @default("customer") // customer | proposal
+  contactName         String
+  companyName         String?
+  email               String?
+  phone               String?
+  title               String
+  summary             String?
+  estValue            Decimal?  @db.Decimal(14, 2)
+  status              String    @default("NEW") // NEW | SENT_TO_CRM | PROPOSAL_SHARED | WON | LOST
+  twentyPersonId      String?
+  twentyOpportunityId String?
+  papermarkDocumentId String?
+  papermarkLinkId     String?
+  proposalUrl         String?
+  proposalViews       Int       @default(0)
+  proposalDownloads   Int       @default(0)
+  lastViewedAt        DateTime?
+  syncError           String?
+  notes               String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  createdById         String?
+  updatedById         String?
+  departmentId        String?
+  ownerId             String?
+  archivedAt          DateTime?
+
+  @@index([organizationId, status])
+  @@index([organizationId, requestType, createdAt])
+  @@map("crm_requests")
+}

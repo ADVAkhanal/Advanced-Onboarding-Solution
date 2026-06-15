@@ -28,6 +28,7 @@ export function AppShell({ user, children }: { user: AuthenticatedUser; children
     "shop-floor-control": "/erp/shop-floor",
     "maintenance-command": "/maintenance",
     "shift-handoff": "/shift-handoff",
+    "crm-portal": "/crm",
     "erp-documents": "/erp/documents",
     "department-ticket-centers": "/tickets",
     "onboarding-case-management": "/onboarding",
@@ -50,7 +51,7 @@ export function AppShell({ user, children }: { user: AuthenticatedUser; children
     if (["erp-command-center", "customers-parts", "quotes-orders", "jobs-work-orders", "shop-schedule", "inventory-materials", "purchasing-receiving", "shipping", "quality-ncrs"].includes(slug)) {
       return user.userLevel !== "USER";
     }
-    if (["approval-queue", "reports-exports"].includes(slug)) {
+    if (["approval-queue", "reports-exports", "crm-portal"].includes(slug)) {
       return user.userLevel !== "USER";
     }
     return true;

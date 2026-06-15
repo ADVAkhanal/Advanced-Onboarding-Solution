@@ -479,6 +479,21 @@ export const WORKFLOW_MODULES: WorkflowModule[] = [
     reports: ["Shift Handoff Log", "Shift Attainment Report"]
   },
   {
+    slug: "crm-portal",
+    title: "CRM Portal",
+    navLabel: "CRM Portal",
+    icon: Handshake,
+    summary: "Capture customer and proposal requests, push them to Twenty CRM, share proposal PDFs via Papermark, and track CRM activity, proposal views, and customer status. Integrations are env-gated; local records are authoritative.",
+    owner: "Sales, Estimating, Management",
+    primaryAction: "New Request",
+    secondaryAction: "Open Activity",
+    metricLabels: ["Open requests", "Sent to CRM", "Proposals shared", "Proposal views"],
+    workflows: ["Capture customer/proposal request", "Push to Twenty CRM", "Share proposal via Papermark", "Track views & status"],
+    fields: ["type", "contact", "company", "email", "title", "summary", "est. value", "status"],
+    statuses: ["NEW", "SENT_TO_CRM", "PROPOSAL_SHARED", "WON", "LOST"],
+    reports: ["CRM Activity Report", "Proposal Engagement Report"]
+  },
+  {
     slug: "erp-documents",
     title: "ERP Document Records",
     navLabel: "ERP Documents",
@@ -1094,6 +1109,7 @@ export const NAVIGATION = [
   "shop-floor-control",
   "maintenance-command",
   "shift-handoff",
+  "crm-portal",
   "department-ticket-centers",
   "onboarding-case-management",
   "payroll-coordination-center",

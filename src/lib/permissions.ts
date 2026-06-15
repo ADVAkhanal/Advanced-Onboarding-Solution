@@ -62,7 +62,9 @@ export const PERMISSIONS = [
   ["jobactual:view", "View recorded job actuals"],
   ["jobactual:record", "Record completed-job actuals (feeds cycle-time estimates)"],
   ["maintenance:view", "View maintenance / CMMS records and submit maintenance requests"],
-  ["maintenance:manage", "Manage machines, PM schedule, maintenance work orders, MRO parts, and downtime"]
+  ["maintenance:manage", "Manage machines, PM schedule, maintenance work orders, MRO parts, and downtime"],
+  ["crm:view", "View the CRM portal — customer/proposal requests and activity"],
+  ["crm:manage", "Capture customer/proposal requests, push to CRM, and share proposals"]
 ] as const;
 
 export type PermissionKey = (typeof PERMISSIONS)[number][0];
@@ -132,7 +134,9 @@ const levelPermissions: Record<UserLevel, PermissionKey[]> = {
     "jobactual:view",
     "jobactual:record",
     "maintenance:view",
-    "maintenance:manage"
+    "maintenance:manage",
+    "crm:view",
+    "crm:manage"
   ],
   DIRECTOR: [
     "dashboard:view",
@@ -188,7 +192,9 @@ const levelPermissions: Record<UserLevel, PermissionKey[]> = {
     "jobactual:view",
     "jobactual:record",
     "maintenance:view",
-    "maintenance:manage"
+    "maintenance:manage",
+    "crm:view",
+    "crm:manage"
   ],
   ADMIN: PERMISSIONS.map(([key]) => key)
 };
