@@ -1,7 +1,16 @@
 import Link from "next/link";
-import { Bell, BookOpenCheck, CalendarDays, GraduationCap, Inbox, MessageSquareQuote, Search, ShieldAlert } from "lucide-react";
+import { Bell, BookOpenCheck, CalendarDays, ExternalLink, FileText, GraduationCap, Images, Inbox, MessageSquareQuote, Search, ShieldAlert, Users } from "lucide-react";
 import type { AuthenticatedUser } from "@/lib/auth";
 import { BRAND_FOOTER, DISCLAIMER, NAVIGATION, PRODUCT_NAME, WORKFLOW_MODULES } from "@/lib/reference-data";
+
+// External companion apps — URLs are env-driven (Railway), with the documented
+// placeholders as defaults so the links always render and an admin just points
+// them at the real hosts. Open in a new tab; never inherit the app session.
+const EXTERNAL_APPS = [
+  { key: "crm", label: "Open CRM", url: process.env.CRM_URL || "https://crm.yourdomain.com", Icon: Users },
+  { key: "docs", label: "Open Document Portal", url: process.env.DOCS_PORTAL_URL || "https://docs.yourdomain.com", Icon: FileText },
+  { key: "photos", label: "Company Photos", url: process.env.PHOTOS_URL || "https://photos.company.com", Icon: Images }
+];
 
 export function AppShell({ user, children }: { user: AuthenticatedUser; children: React.ReactNode }) {
   const modulesBySlug = new Map(WORKFLOW_MODULES.map((module) => [module.slug, module]));
@@ -97,6 +106,16 @@ export function AppShell({ user, children }: { user: AuthenticatedUser; children
               <span>Data Boundaries</span>
             </span>
           </Link>
+          <div className="nav-section-label">External Apps</div>
+          {EXTERNAL_APPS.map(({ key, label, url, Icon }) => (
+            <a className="nav-item" key={key} href={url} target="_blank" rel="noopener noreferrer">
+              <span className="nav-left">
+                <Icon size={18} />
+                <span>{label}</span>
+              </span>
+              <ExternalLink size={14} aria-hidden="true" />
+            </a>
+          ))}
         </nav>
         <div className="sidebar-card">
           <strong>{process.env.COMPANY_NAME || "Advanced PMC"}</strong>

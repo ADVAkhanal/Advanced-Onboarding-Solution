@@ -1837,6 +1837,17 @@ button.pill:focus-visible {
   flex-shrink: 0;
 }
 
+/* Sidebar section divider label (e.g. "External Apps"). Sidebar is charcoal,  */
+/* so the label is a dimmed light gray.                                        */
+.nav-section-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(237, 232, 230, 0.5);
+  padding: 14px 12px 4px;
+}
+
 @media print {
   /* Strip the app shell so the printed page is just the document. */
   .sidebar,
