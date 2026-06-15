@@ -13,6 +13,7 @@ import { averageAgeDays, maxAgeDays, onTimeRate, reworkRate, utilizationPct } fr
 import { slaAssess, slaLabel, slaPill, slaWindowHours } from "../src/lib/sla";
 import { appError, errorCodeList, ERROR_CODES } from "../src/lib/error-codes";
 import { HttpError } from "../src/lib/http";
+import { qrMatrix, qrSvg } from "../src/lib/qr";
 
 const mode = process.argv[2] ?? "all";
 
@@ -355,6 +356,33 @@ async function runUnit() {
   if (savedTwentyUrl === undefined) delete process.env.TWENTY_API_URL; else process.env.TWENTY_API_URL = savedTwentyUrl;
   if (savedTwentyKey === undefined) delete process.env.TWENTY_API_KEY; else process.env.TWENTY_API_KEY = savedTwentyKey;
   if (savedPmKey === undefined) delete process.env.PAPERMARK_API_KEY; else process.env.PAPERMARK_API_KEY = savedPmKey;
+
+  // QR encoder (ShipNotify confirm codes) — structural + deterministic checks.
+  const url = "https://shop.example.com/s/confirm/abc123DEF456ghi789";
+  const matrix = qrMatrix(url);
+  // Square, and a valid QR size (17 + 4*version).
+  assert.equal(matrix.length, matrix[0].length, "QR matrix must be square");
+  assert.equal((matrix.length - 17) % 4, 0, "QR size must be 17 + 4*version");
+  assert.ok(matrix.length >= 21 && matrix.length <= 57, "QR version 1..10");
+  // Finder pattern at top-left: solid 7-module border row + dark 3x3 center.
+  for (let c = 0; c < 7; c += 1) {
+    assert.equal(matrix[0][c], true, "finder top border dark");
+    assert.equal(matrix[6][c], true, "finder bottom border dark");
+  }
+  assert.equal(matrix[1][1], false, "finder inner light ring");
+  assert.equal(matrix[3][3], true, "finder center dark");
+  // Deterministic: same input → identical matrix.
+  assert.deepEqual(qrMatrix(url), matrix, "QR output is deterministic");
+  // Longer payload selects an equal-or-larger version.
+  const big = qrMatrix(url + "/" + "x".repeat(120));
+  assert.ok(big.length >= matrix.length, "longer payload → larger QR");
+  // SVG render is self-contained (no external refs) with a white backdrop.
+  const svg = qrSvg(url, { scale: 4, margin: 4 });
+  assert.ok(svg.startsWith("<svg"), "qrSvg returns an svg element");
+  assert.ok(svg.includes("<rect") && svg.includes('fill="#ffffff"'), "svg has modules + backdrop");
+  assert.ok(!svg.includes("http://") || svg.includes("www.w3.org"), "svg references no external host");
+  // Overflow guard.
+  assert.throws(() => qrMatrix("y".repeat(400)), /too long/, "payload over v10 capacity throws");
 }
 
 async function runIntegration() {
