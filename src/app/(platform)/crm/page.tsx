@@ -5,6 +5,7 @@ import { ErpCreateForm } from "@/components/erp-create-form";
 import { fmtDate } from "@/lib/maintenance";
 import { isPapermarkConfigured } from "@/lib/integrations/papermark";
 import { isTwentyConfigured } from "@/lib/integrations/twenty";
+import { ProposalActions } from "./proposal-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -113,6 +114,7 @@ export default async function CrmPortalPage() {
                 <th>Status</th>
                 <th>CRM</th>
                 <th style={{ textAlign: "right" }}>Views</th>
+                {canManage ? <th>Proposal</th> : null}
                 <th>Created</th>
               </tr>
             </thead>
@@ -128,6 +130,17 @@ export default async function CrmPortalPage() {
                     {r.twentyPersonId ? <span className="pill green">synced</span> : r.syncError ? <span className="pill red" title={r.syncError}>error</span> : <span className="pill">local</span>}
                   </td>
                   <td style={{ textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{r.proposalViews || "—"}</td>
+                  {canManage ? (
+                    <td>
+                      <ProposalActions
+                        id={r.id}
+                        hasLink={Boolean(r.papermarkLinkId)}
+                        viewUrl={r.proposalUrl}
+                        views={r.proposalViews}
+                        enabled={papermarkOn}
+                      />
+                    </td>
+                  ) : null}
                   <td>{fmtDate(r.createdAt)}</td>
                 </tr>
               ))}

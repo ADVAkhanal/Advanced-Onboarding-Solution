@@ -1,6 +1,7 @@
 import type { DashboardDef } from "./types";
 import { loadAdvancedCapacity } from "./advanced-capacity";
 import { loadCapacityHeatmap } from "./capacity-heatmap";
+import { loadCrmActivity } from "./crm-activity";
 import { loadFirstPiece } from "./first-piece";
 import { loadMaintenanceHealth } from "./maintenance-health";
 import { loadNpi } from "./npi";
@@ -123,6 +124,16 @@ export const DASHBOARDS: DashboardDef[] = [
     inspiredBy: "ADVANCED Helpdesk (standalone app)",
     permission: "report:view",
     load: loadSupportDesk
+  },
+  {
+    key: "crm-activity",
+    title: "CRM Activity",
+    eyebrow: "Analytics · CRM",
+    description:
+      "Customer/proposal pipeline: requests by status and type, CRM sync state, and Papermark proposal engagement (views/downloads).",
+    inspiredBy: "Twenty CRM + Papermark (integration bridge)",
+    permission: "crm:view",
+    load: loadCrmActivity
   }
 ];
 
