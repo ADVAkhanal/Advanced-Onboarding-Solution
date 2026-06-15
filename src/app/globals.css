@@ -1848,6 +1848,109 @@ button.pill:focus-visible {
   padding: 14px 12px 4px;
 }
 
+/* ShipNotify — packing-slip confirm block */
+.packing-confirm {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  margin-top: 24px;
+  padding: 18px;
+  border: 1px solid #d8dde6;
+  border-radius: 10px;
+}
+.packing-qr {
+  flex: 0 0 auto;
+  width: 140px;
+  height: 140px;
+}
+.packing-qr svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.packing-confirm-text h4 {
+  margin: 0 0 6px;
+}
+.packing-confirm-text p {
+  margin: 4px 0;
+  font-size: 13px;
+}
+.packing-confirm-url {
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-size: 11px;
+  color: #66758c;
+  word-break: break-all;
+}
+
+/* ShipNotify — public confirmation page (no app shell) */
+.public-confirm {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: #0f1217;
+}
+.public-confirm-card {
+  width: 100%;
+  max-width: 420px;
+  background: #fff;
+  color: #1c2330;
+  border-radius: 16px;
+  padding: 32px 28px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  text-align: center;
+}
+.public-confirm-brand {
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 12px;
+  color: #66758c;
+  margin-bottom: 18px;
+}
+.public-confirm-card h1 {
+  font-size: 22px;
+  margin: 0 0 10px;
+}
+.public-confirm-card p {
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 6px 0;
+}
+.public-confirm-note {
+  color: #66758c;
+}
+.public-confirm-check {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 12px;
+  border-radius: 50%;
+  background: #1f9d57;
+  color: #fff;
+  font-size: 30px;
+  line-height: 56px;
+}
+.public-confirm-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 18px;
+  text-align: left;
+}
+.public-confirm-form label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #45506280;
+}
+.public-confirm-form .button.primary {
+  background: #1c64f2;
+  color: #fff;
+  border: none;
+  padding: 12px;
+  font-weight: 600;
+}
+
 @media print {
   /* Strip the app shell so the printed page is just the document. */
   .sidebar,

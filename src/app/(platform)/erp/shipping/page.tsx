@@ -3,6 +3,7 @@ import { requirePermission } from "@/lib/auth";
 import { formatShortDate, getErpReferenceData } from "@/lib/erp-data";
 import { prisma } from "@/lib/prisma";
 import { ErpCreateForm } from "@/components/erp-create-form";
+import { ShipmentActions } from "./shipment-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -28,7 +29,7 @@ export default async function ShippingPage() {
         ]} />
         <section className="card"><div className="section-title"><h2>Shipping Signals</h2><span className="pill">{shipments.length}</span></div><div className="card-pad"><ul className="compact-list"><li><span>Planned / ready</span><strong>{shipments.filter((shipment) => ["PLANNED", "READY"].includes(shipment.status)).length}</strong></li><li><span>On hold</span><strong>{shipments.filter((shipment) => shipment.status === "HOLD").length}</strong></li><li><span>Shipped</span><strong>{shipments.filter((shipment) => shipment.status === "SHIPPED").length}</strong></li></ul></div></section>
       </div>
-      <section className="card" style={{ marginTop: 14 }}><div className="section-title"><h2>Shipment Board</h2><span className="pill">{shipments.length}</span></div>{shipments.length ? <table className="table"><thead><tr><th>Shipment</th><th>Ship Date</th><th>Carrier</th><th>Tracking</th><th>Status</th></tr></thead><tbody>{shipments.map((shipment) => <tr key={shipment.id}><td>{shipment.shipmentNumber}</td><td>{formatShortDate(shipment.shipDate)}</td><td>{shipment.carrierName ?? "Not set"}</td><td>{shipment.trackingNumber ?? "Not set"}</td><td>{shipment.status}</td></tr>)}</tbody></table> : <div className="empty">No shipments planned yet.</div>}</section>
+      <section className="card" style={{ marginTop: 14 }}><div className="section-title"><h2>Shipment Board</h2><span className="pill">{shipments.length}</span></div>{shipments.length ? <table className="table"><thead><tr><th>Shipment</th><th>Ship Date</th><th>Carrier</th><th>Tracking</th><th>Status</th><th>ShipNotify</th></tr></thead><tbody>{shipments.map((shipment) => <tr key={shipment.id}><td>{shipment.shipmentNumber}</td><td>{formatShortDate(shipment.shipDate)}</td><td>{shipment.carrierName ?? "Not set"}</td><td>{shipment.trackingNumber ?? "Not set"}</td><td>{shipment.status}</td><td><ShipmentActions id={shipment.id} notified={Boolean(shipment.notifiedAt)} confirmed={Boolean(shipment.confirmedAt)} /></td></tr>)}</tbody></table> : <div className="empty">No shipments planned yet.</div>}</section>
     </>
   );
 }
