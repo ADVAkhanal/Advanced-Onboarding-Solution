@@ -11,6 +11,8 @@ import { csvCell, toCsv } from "../src/lib/export/csv";
 import { parseProShopDate } from "../src/lib/proshop/work-orders";
 import { averageAgeDays, maxAgeDays, onTimeRate, reworkRate, utilizationPct } from "../src/lib/metrics";
 import { slaAssess, slaLabel, slaPill, slaWindowHours } from "../src/lib/sla";
+import { appError, errorCodeList, ERROR_CODES } from "../src/lib/error-codes";
+import { HttpError } from "../src/lib/http";
 
 const mode = process.argv[2] ?? "all";
 
@@ -314,6 +316,23 @@ async function runUnit() {
   assert.equal(slaWs.state, "risk");
   // Clock never goes negative (createdAt in the future → 0%).
   assert.equal(slaAssess({ createdAtMs: 10 * HOUR, priority: "LOW", nowMs: 0 }).pct, 0);
+
+  // Error-code catalog (MODULE-CODE contract).
+  const crmErr = appError("CRM-502");
+  assert.ok(crmErr instanceof HttpError);
+  assert.equal(crmErr.status, 502);
+  assert.equal(crmErr.code, "CRM-502"); // machine code is preserved for clients
+  assert.ok(crmErr.message.length > 0);
+  // detail is appended to the canonical message.
+  assert.ok(appError("SHIP-404", "Token abc.").message.includes("Token abc."));
+  // Every code is MODULE-CODE shaped with a sane HTTP status and a message.
+  const codes = errorCodeList();
+  assert.ok(codes.length === Object.keys(ERROR_CODES).length && codes.length > 0);
+  for (const c of codes) {
+    assert.match(c.code, /^[A-Z]+-[0-9]+$/, `bad error code shape: ${c.code}`);
+    assert.ok(c.status >= 400 && c.status <= 599, `bad status for ${c.code}`);
+    assert.ok(c.message.trim().length > 0, `empty message for ${c.code}`);
+  }
 }
 
 async function runIntegration() {
