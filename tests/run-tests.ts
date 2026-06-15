@@ -333,6 +333,28 @@ async function runUnit() {
     assert.ok(c.status >= 400 && c.status <= 599, `bad status for ${c.code}`);
     assert.ok(c.message.trim().length > 0, `empty message for ${c.code}`);
   }
+
+  // Integration bridges: env-gated both ways (ADR 0001 — disabled by default).
+  const { isTwentyConfigured, twentyConfig } = await import("../src/lib/integrations/twenty");
+  const { isPapermarkConfigured } = await import("../src/lib/integrations/papermark");
+  const savedTwentyUrl = process.env.TWENTY_API_URL;
+  const savedTwentyKey = process.env.TWENTY_API_KEY;
+  const savedPmKey = process.env.PAPERMARK_API_KEY;
+  delete process.env.TWENTY_API_URL;
+  delete process.env.TWENTY_API_KEY;
+  delete process.env.PAPERMARK_API_KEY;
+  assert.equal(isTwentyConfigured(), false, "Twenty must be off without env");
+  assert.equal(isPapermarkConfigured(), false, "Papermark must be off without env");
+  process.env.TWENTY_API_URL = "https://crm.example.com/";
+  process.env.TWENTY_API_KEY = "test-key";
+  assert.equal(isTwentyConfigured(), true, "Twenty on once env is set");
+  assert.equal(twentyConfig()?.url, "https://crm.example.com", "trailing slash trimmed");
+  process.env.PAPERMARK_API_KEY = "pm-key";
+  assert.equal(isPapermarkConfigured(), true, "Papermark on once key is set");
+  // Restore env so other tests/processes are unaffected.
+  if (savedTwentyUrl === undefined) delete process.env.TWENTY_API_URL; else process.env.TWENTY_API_URL = savedTwentyUrl;
+  if (savedTwentyKey === undefined) delete process.env.TWENTY_API_KEY; else process.env.TWENTY_API_KEY = savedTwentyKey;
+  if (savedPmKey === undefined) delete process.env.PAPERMARK_API_KEY; else process.env.PAPERMARK_API_KEY = savedPmKey;
 }
 
 async function runIntegration() {

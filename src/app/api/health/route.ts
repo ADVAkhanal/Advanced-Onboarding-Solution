@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { checkEnv } from "@/lib/env";
 import { isErpNextConfigured } from "@/lib/erpnext/client";
+import { isPapermarkConfigured } from "@/lib/integrations/papermark";
+import { isTwentyConfigured } from "@/lib/integrations/twenty";
 import { prisma } from "@/lib/prisma";
 import { isProShopConfigured } from "@/lib/proshop/client";
 import { pushoverStatus } from "@/lib/pushover";
@@ -33,6 +35,8 @@ export async function GET() {
     integrations: {
       proshopConfigured: isProShopConfigured(),
       erpnextConfigured: isErpNextConfigured(),
+      twentyCrmConfigured: isTwentyConfigured(),
+      papermarkConfigured: isPapermarkConfigured(),
       cronConfigured: Boolean(process.env.CRON_SECRET?.trim()),
       pushoverEnabled: pushover.enabled
     },
