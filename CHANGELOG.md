@@ -19,8 +19,12 @@ readiness at `GET /health`.
   create records in Twenty CRM; proposal PDFs shared via Papermark with
   view/download analytics fed back; CRM activity dashboard. Env-gated, health-
   probed, admin status page, audit-logged (the standard bridge contract — ADR 0001).
-- **Shipment notifications (ShipNotify)** — per-shipment QR + public confirm
-  link, idempotent vendor/customer notification, print-CSS packing slip.
+- **Shipment notifications (ShipNotify)** — per-shipment opaque confirm token +
+  dependency-free QR encoder (`src/lib/qr.ts`, byte-mode ECC-M, no external
+  service), print-CSS packing slip carrying the QR, public no-login confirm page
+  (`/s/[token]`), and idempotent internal alerts via Pushover (shipment ready →
+  recipient scans → confirm → "received" alert back to the shop). See
+  `docs/shipnotify.md`.
 
 ## [1.6.0] — Platform Blueprint
 ### Added
