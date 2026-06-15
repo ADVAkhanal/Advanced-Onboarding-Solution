@@ -1,7 +1,16 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { SESSION_COOKIE } from "./lib/session-constants";
 
-const publicPaths = ["/login", "/api/auth/login", "/api/health", "/api/version", "/quiz", "/api/training/attempts"];
+const publicPaths = [
+  "/login",
+  "/api/auth/login",
+  "/api/health",
+  "/api/version",
+  "/quiz",
+  "/api/training/attempts",
+  "/s", // ShipNotify public confirm pages (/s/<token>)
+  "/api/public/ship-confirm" // ShipNotify public confirm endpoint
+];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
