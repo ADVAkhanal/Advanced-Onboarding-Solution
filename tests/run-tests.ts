@@ -17,6 +17,7 @@ import { qrMatrix, qrSvg } from "../src/lib/qr";
 import { moduleKeysFor } from "../src/lib/search/global-search";
 import { getMemo, stableHash } from "../src/lib/cache/snapshots";
 import { isLowStock, isOverdue, severityRank, summarizeAlerts } from "../src/lib/action-center";
+import { loadRelationships } from "../src/lib/relationships";
 
 const mode = process.argv[2] ?? "all";
 
@@ -432,6 +433,10 @@ async function runUnit() {
     { id: "c", severity: "warning", module: "Quality", title: "z", href: "/", createdAt: "", suggestedAction: "" }
   ]);
   assert.deepEqual(sum, { total: 3, critical: 1, warning: 2, info: 0 }, "summarizeAlerts counts by severity");
+
+  // Relationship resolver: unknown entity types resolve to no groups (no DB hit).
+  const noRel = await loadRelationships({ organizationId: "org" } as never, "unknown-entity", "x");
+  assert.deepEqual(noRel, [], "unknown entity type → no relationships");
 }
 
 async function runIntegration() {

@@ -5,6 +5,7 @@ import { formatShortDate } from "@/lib/erp-data";
 import { prisma } from "@/lib/prisma";
 import { complexityLabel, diameterLabel, materialLabel, processLabel } from "@/lib/quoting";
 import { DataTable, type Column } from "@/components/data-table";
+import { RelationshipPanel } from "@/components/relationship-panel";
 import { QuoteStatusActions } from "./status-actions";
 import { AddLineForm } from "./add-line-form";
 import { ConvertAction } from "./convert-action";
@@ -366,6 +367,8 @@ export default async function QuoteDetailPage({ params }: { params: { id: string
           </div>
         ) : null}
       </section>
+
+      <RelationshipPanel user={user} entityType="quote" entityId={quote.id} />
 
       <section className="card" style={{ marginTop: 14 }}>
         <div className="section-title">
