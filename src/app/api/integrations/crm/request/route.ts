@@ -10,7 +10,7 @@ import { createOpportunity, createPerson, isTwentyConfigured } from "@/lib/integ
 export const dynamic = "force-dynamic";
 
 const schema = z.object({
-  requestType: z.enum(["customer", "proposal"]).optional(),
+  requestType: z.enum(["customer", "proposal", "rfq", "contact", "revision"]).optional(),
   contactName: z.string().min(1).max(160),
   companyName: z.string().max(160).optional(),
   email: z.string().email().max(200).optional(),
@@ -63,7 +63,7 @@ export async function POST(request: Request) {
           companyName: body.companyName
         });
         const opportunityId =
-          body.requestType === "proposal" || body.estValue != null
+          body.requestType === "proposal" || body.requestType === "rfq" || body.estValue != null
             ? await createOpportunity({ name: body.title, pointOfContactId: personId, amount: body.estValue })
             : null;
         record = await prisma.crmRequest.update({

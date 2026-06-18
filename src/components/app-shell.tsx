@@ -1,16 +1,19 @@
 import Link from "next/link";
-import { AlertTriangle, Bell, BookOpenCheck, CalendarDays, ExternalLink, FileText, GraduationCap, Images, Inbox, MessageSquareQuote, ShieldAlert, Users } from "lucide-react";
+import { AlertTriangle, Bell, BookOpenCheck, CalendarDays, FileText, GraduationCap, Images, Inbox, MessageSquareQuote, ShieldAlert, Users } from "lucide-react";
 import type { AuthenticatedUser } from "@/lib/auth";
+import type { PermissionKey } from "@/lib/permissions";
 import { BRAND_FOOTER, DISCLAIMER, NAVIGATION, PRODUCT_NAME, WORKFLOW_MODULES } from "@/lib/reference-data";
 import { TopbarSearch } from "@/components/topbar-search";
 
-// External companion apps — URLs are env-driven (Railway), with the documented
-// placeholders as defaults so the links always render and an admin just points
-// them at the real hosts. Open in a new tab; never inherit the app session.
-const EXTERNAL_APPS = [
-  { key: "crm", label: "Open CRM", url: process.env.CRM_URL || "https://crm.yourdomain.com", Icon: Users },
-  { key: "docs", label: "Open Document Portal", url: process.env.DOCS_PORTAL_URL || "https://docs.yourdomain.com", Icon: FileText },
-  { key: "photos", label: "Company Photos", url: process.env.PHOTOS_URL || "https://photos.company.com", Icon: Images }
+// In-app quick links. CRM + intake land on internal routes (permission-gated).
+// Document Portal and Company Photos are internal routes that redirect to the
+// env-configured external service (DOCUMENT_PORTAL_URL / COMPANY_PHOTOS_URL)
+// when set, else show a placeholder — no production domains are hardcoded.
+const QUICK_LINKS: Array<{ key: string; label: string; href: string; Icon: typeof Users; permission?: PermissionKey }> = [
+  { key: "crm", label: "Open CRM", href: "/crm", Icon: Users, permission: "crm:view" },
+  { key: "proposal", label: "Request Proposal", href: "/proposal-request", Icon: MessageSquareQuote, permission: "crm:manage" },
+  { key: "docs", label: "Document Portal", href: "/documents", Icon: FileText },
+  { key: "photos", label: "Company Photos", href: "/photos", Icon: Images }
 ];
 
 export function AppShell({ user, children }: { user: AuthenticatedUser; children: React.ReactNode }) {
@@ -116,15 +119,14 @@ export function AppShell({ user, children }: { user: AuthenticatedUser; children
               <span>Data Boundaries</span>
             </span>
           </Link>
-          <div className="nav-section-label">External Apps</div>
-          {EXTERNAL_APPS.map(({ key, label, url, Icon }) => (
-            <a className="nav-item" key={key} href={url} target="_blank" rel="noopener noreferrer">
+          <div className="nav-section-label">Quick Links</div>
+          {QUICK_LINKS.filter((l) => !l.permission || user.permissions.includes(l.permission)).map(({ key, label, href, Icon }) => (
+            <Link className="nav-item" key={key} href={href}>
               <span className="nav-left">
                 <Icon size={18} />
                 <span>{label}</span>
               </span>
-              <ExternalLink size={14} aria-hidden="true" />
-            </a>
+            </Link>
           ))}
         </nav>
         <div className="sidebar-card">
