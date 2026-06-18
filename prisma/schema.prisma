@@ -3279,6 +3279,28 @@ model ProShopSyncRun {
   @@map("proshop_sync_runs")
 }
 
+// Operations Hub cache: database-backed computed snapshots (expensive rollups,
+// AI summaries, analytics). source_hash lets callers skip recompute (and AI
+// calls) when the underlying data is unchanged. Invalidated by entity on writes.
+model ComputedSnapshot {
+  id             String    @id @default(cuid())
+  organizationId String
+  snapshotKey    String
+  entityType     String?
+  entityId       String?
+  dataJson       Json
+  sourceHash     String?
+  computedAt     DateTime  @default(now())
+  expiresAt      DateTime?
+  createdById    String?
+  updatedAt      DateTime  @updatedAt
+
+  @@unique([organizationId, snapshotKey])
+  @@index([organizationId, entityType, entityId])
+  @@index([organizationId, expiresAt])
+  @@map("computed_snapshots")
+}
+
 // ---------------------------------------------------------------------------
 // Maintenance / CMMS  (reimagines the standalone "Maintenance Command" app)
 // Equipment asset register, preventive-maintenance schedule, maintenance work

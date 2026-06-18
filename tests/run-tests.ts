@@ -15,6 +15,7 @@ import { appError, errorCodeList, ERROR_CODES } from "../src/lib/error-codes";
 import { HttpError } from "../src/lib/http";
 import { qrMatrix, qrSvg } from "../src/lib/qr";
 import { moduleKeysFor } from "../src/lib/search/global-search";
+import { getMemo, stableHash } from "../src/lib/cache/snapshots";
 
 const mode = process.argv[2] ?? "all";
 
@@ -394,6 +395,24 @@ async function runUnit() {
   assert.ok(erpModules.includes("customers") && erpModules.includes("quotes"), "erp:view + quote:view enable those modules");
   assert.ok(!erpModules.includes("tickets"), "erp:view alone does not enable tickets");
   assert.equal(moduleKeysFor([]).length, 0, "no permissions → nothing searchable");
+
+  // Caching: stable source hash + server-memory tier.
+  assert.equal(stableHash({ a: 1, b: 2 }), stableHash({ b: 2, a: 1 }), "stableHash is key-order independent");
+  assert.notEqual(stableHash({ a: 1 }), stableHash({ a: 2 }), "stableHash changes when a value changes");
+  assert.equal(stableHash([1, 2, 3]), stableHash([1, 2, 3]), "stableHash is deterministic for arrays");
+  let memoCalls = 0;
+  const compute = async () => {
+    memoCalls += 1;
+    return memoCalls;
+  };
+  const m1 = await getMemo("test:memo", compute, 10_000);
+  const m2 = await getMemo("test:memo", compute, 10_000);
+  assert.equal(m1, 1);
+  assert.equal(m2, 1);
+  assert.equal(memoCalls, 1, "getMemo serves the cached value within TTL");
+  await getMemo("test:memo-zero", compute, 0);
+  await getMemo("test:memo-zero", compute, 0);
+  assert.ok(memoCalls >= 3, "ttl 0 forces recompute each call");
 }
 
 async function runIntegration() {
