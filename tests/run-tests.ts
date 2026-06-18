@@ -14,6 +14,7 @@ import { slaAssess, slaLabel, slaPill, slaWindowHours } from "../src/lib/sla";
 import { appError, errorCodeList, ERROR_CODES } from "../src/lib/error-codes";
 import { HttpError } from "../src/lib/http";
 import { qrMatrix, qrSvg } from "../src/lib/qr";
+import { moduleKeysFor } from "../src/lib/search/global-search";
 
 const mode = process.argv[2] ?? "all";
 
@@ -383,6 +384,16 @@ async function runUnit() {
   assert.ok(!svg.includes("http://") || svg.includes("www.w3.org"), "svg references no external host");
   // Overflow guard.
   assert.throws(() => qrMatrix("y".repeat(400)), /too long/, "payload over v10 capacity throws");
+
+  // Global search — permission gating (no DB needed for this).
+  const userModules = moduleKeysFor(["ticket:view"]);
+  assert.ok(userModules.includes("tickets"), "ticket:view enables ticket search");
+  assert.ok(!userModules.includes("customers"), "no erp:view → no customer search");
+  assert.ok(!userModules.includes("users"), "no admin:manage → no employee search");
+  const erpModules = moduleKeysFor(["erp:view", "quote:view"]);
+  assert.ok(erpModules.includes("customers") && erpModules.includes("quotes"), "erp:view + quote:view enable those modules");
+  assert.ok(!erpModules.includes("tickets"), "erp:view alone does not enable tickets");
+  assert.equal(moduleKeysFor([]).length, 0, "no permissions → nothing searchable");
 }
 
 async function runIntegration() {

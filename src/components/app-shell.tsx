@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { Bell, BookOpenCheck, CalendarDays, ExternalLink, FileText, GraduationCap, Images, Inbox, MessageSquareQuote, Search, ShieldAlert, Users } from "lucide-react";
+import { Bell, BookOpenCheck, CalendarDays, ExternalLink, FileText, GraduationCap, Images, Inbox, MessageSquareQuote, ShieldAlert, Users } from "lucide-react";
 import type { AuthenticatedUser } from "@/lib/auth";
 import { BRAND_FOOTER, DISCLAIMER, NAVIGATION, PRODUCT_NAME, WORKFLOW_MODULES } from "@/lib/reference-data";
+import { TopbarSearch } from "@/components/topbar-search";
 
 // External companion apps — URLs are env-driven (Railway), with the documented
 // placeholders as defaults so the links always render and an admin just points
@@ -131,10 +132,7 @@ export function AppShell({ user, children }: { user: AuthenticatedUser; children
             <strong>{PRODUCT_NAME}</strong>
             <span>Internal shop ERP and operations command center</span>
           </div>
-          <div className="search">
-            <Search size={18} />
-            <input aria-label="Search" placeholder="Search jobs, customers, parts, tickets, employees..." />
-          </div>
+          <TopbarSearch />
           <div className="user-chip">
             <Bell size={20} />
             <Inbox size={20} />
