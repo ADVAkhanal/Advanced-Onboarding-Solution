@@ -16,6 +16,7 @@ import { HttpError } from "../src/lib/http";
 import { qrMatrix, qrSvg } from "../src/lib/qr";
 import { moduleKeysFor } from "../src/lib/search/global-search";
 import { getMemo, stableHash } from "../src/lib/cache/snapshots";
+import { isLowStock, isOverdue, severityRank, summarizeAlerts } from "../src/lib/action-center";
 
 const mode = process.argv[2] ?? "all";
 
@@ -413,6 +414,24 @@ async function runUnit() {
   await getMemo("test:memo-zero", compute, 0);
   await getMemo("test:memo-zero", compute, 0);
   assert.ok(memoCalls >= 3, "ttl 0 forces recompute each call");
+
+  // Action Center rule helpers.
+  const refNow = new Date("2026-06-18T12:00:00Z");
+  assert.equal(isOverdue(new Date("2026-06-17T12:00:00Z"), refNow), true, "past due date is overdue");
+  assert.equal(isOverdue(new Date("2026-06-19T12:00:00Z"), refNow), false, "future due date is not overdue");
+  assert.equal(isOverdue(null, refNow), false, "no due date is not overdue");
+  assert.equal(isLowStock(2, 5), true, "below reorder is low");
+  assert.equal(isLowStock(5, 5), true, "at reorder is low");
+  assert.equal(isLowStock(6, 5), false, "above reorder is fine");
+  assert.equal(isLowStock(0, null), false, "no reorder point → never low");
+  assert.ok(severityRank("critical") < severityRank("warning"), "critical sorts before warning");
+  assert.ok(severityRank("warning") < severityRank("info"), "warning sorts before info");
+  const sum = summarizeAlerts([
+    { id: "a", severity: "critical", module: "Jobs", title: "x", href: "/", createdAt: "", suggestedAction: "" },
+    { id: "b", severity: "warning", module: "Jobs", title: "y", href: "/", createdAt: "", suggestedAction: "" },
+    { id: "c", severity: "warning", module: "Quality", title: "z", href: "/", createdAt: "", suggestedAction: "" }
+  ]);
+  assert.deepEqual(sum, { total: 3, critical: 1, warning: 2, info: 0 }, "summarizeAlerts counts by severity");
 }
 
 async function runIntegration() {

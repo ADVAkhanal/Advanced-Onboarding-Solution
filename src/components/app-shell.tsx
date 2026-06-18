@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Bell, BookOpenCheck, CalendarDays, ExternalLink, FileText, GraduationCap, Images, Inbox, MessageSquareQuote, ShieldAlert, Users } from "lucide-react";
+import { AlertTriangle, Bell, BookOpenCheck, CalendarDays, ExternalLink, FileText, GraduationCap, Images, Inbox, MessageSquareQuote, ShieldAlert, Users } from "lucide-react";
 import type { AuthenticatedUser } from "@/lib/auth";
 import { BRAND_FOOTER, DISCLAIMER, NAVIGATION, PRODUCT_NAME, WORKFLOW_MODULES } from "@/lib/reference-data";
 import { TopbarSearch } from "@/components/topbar-search";
@@ -66,6 +66,14 @@ export function AppShell({ user, children }: { user: AuthenticatedUser; children
           <div className="brand-sub">Shop Management</div>
         </div>
         <nav className="side-nav" aria-label="Main navigation">
+          {user.permissions.includes("report:view") ? (
+            <Link className="nav-item" href="/action-center">
+              <span className="nav-left">
+                <AlertTriangle size={18} />
+                <span>Action Center</span>
+              </span>
+            </Link>
+          ) : null}
           {visibleNavigation.map((slug, index) => {
             const item = modulesBySlug.get(slug);
             if (!item) return null;
