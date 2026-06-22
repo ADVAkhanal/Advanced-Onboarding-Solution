@@ -3028,6 +3028,10 @@ model AIActionLog {
   outcome          String
   requestId        String?
   errorMessage     String?
+  // Operations Hub: per-feature cost attribution for AI summaries.
+  entityType         String?
+  entityId           String?
+  estimatedCostCents Int?
   departmentId     String?
   ownerId          String?
   archivedAt       DateTime?

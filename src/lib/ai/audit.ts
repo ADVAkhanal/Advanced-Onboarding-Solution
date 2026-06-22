@@ -17,6 +17,9 @@ export type AIAuditInput = {
   outcome: string;
   requestId?: string | null;
   errorMessage?: string | null;
+  entityType?: string | null;
+  entityId?: string | null;
+  estimatedCostCents?: number | null;
   departmentId?: string | null;
   ownerId?: string | null;
 };
